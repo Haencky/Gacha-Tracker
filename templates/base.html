@@ -1,0 +1,52 @@
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Gacha Tracker{% endblock title %}</title>
+        <link rel="stylesheet" href="{% static 'css/app.css' %}">
+        <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+        {% block head %}
+        {% endblock head %}
+    </head>
+    <body class="min-h-screen bg-base-200"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+          hx-boost="true"
+          hx-indicator="#loading">
+        <a class="sr-only focus:not-sr-only focus:absolute focus:m-2 btn"
+           href="#content">Jump to content</a>
+        <header class="navbar bg-base-100 shadow-sm">
+            <div class="navbar-start">
+                <a class="btn btn-ghost text-lg" href="{% url 'core:home' %}">Gacha Tracker</a>
+            </div>
+            <nav class="navbar-center" aria-label="Spiele">
+                <ul class="menu menu-horizontal gap-1">
+                    {% for game in games %}
+                        <li>
+                            <a href="{% url game.url_name %}"
+                               {% if game.slug == current_game %}class="menu-active" aria-current="page"{% endif %}>{{ game.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            <div class="navbar-end">
+                <a class="btn btn-primary btn-sm" href="{% url 'core:import' %}">Import</a>
+            </div>
+        </header>
+        <div id="messages"
+             class="toast toast-top toast-end z-50"
+             aria-live="polite">{% include "partials/messages.html" %}</div>
+        <main id="content" class="container mx-auto max-w-5xl p-4">
+            {% block content %}
+            {% endblock content %}
+        </main>
+        <span id="loading"
+              class="htmx-indicator loading loading-spinner loading-md fixed bottom-4 right-4"
+              role="status"
+              aria-label="Lädt"></span>
+        {% block scripts %}
+        {% endblock scripts %}
+    </body>
+</html>

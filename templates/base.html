@@ -16,12 +16,12 @@
           hx-boost="true"
           hx-indicator="#loading">
         <a class="sr-only focus:not-sr-only focus:absolute focus:m-2 btn"
-           href="#content">Jump to content</a>
+           href="#content">{% translate "Jump to content" %}</a>
         <header class="navbar bg-base-100 shadow-sm">
             <div class="navbar-start">
                 <a class="btn btn-ghost text-lg" href="{% url 'core:home' %}">Gacha Tracker</a>
             </div>
-            <nav class="navbar-center" aria-label="Spiele">
+            <nav class="navbar-center" aria-label="{% translate 'Games' %}">
                 <ul class="menu menu-horizontal gap-1">
                     {% for game in games %}
                         <li>
@@ -32,7 +32,7 @@
                 </ul>
             </nav>
             <div class="navbar-end">
-                <a class="btn btn-primary btn-sm" href="{% url 'core:import' %}">Import</a>
+                <a class="btn btn-primary btn-sm" href="{% url 'core:import' %}">{% translate "Import" %}</a>
             </div>
         </header>
         <div id="messages"
@@ -45,7 +45,7 @@
         <span id="loading"
               class="htmx-indicator loading loading-spinner loading-md fixed bottom-4 right-4"
               role="status"
-              aria-label="Lädt"></span>
+              aria-label="{% translate 'Loading' %}"></span>
         {% block scripts %}
         {% endblock scripts %}
     </body>

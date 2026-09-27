@@ -46,12 +46,19 @@ class AbstractItem(models.Model):
         max_length=100, verbose_name=_("English Name"), help_text=_("English Name of item")
     )
     rarity = models.IntegerField(verbose_name=_("Rarity"), help_text=_("Rarity of item"))
-    image = models.ImageField(
+    portrait = models.ImageField(
         null=True,
         blank=True,
         upload_to=UploadTo("item_id"),
-        verbose_name=_("Image"),
+        verbose_name=_("Item Portrait"),
         help_text=_("Image to be displayed"),
+    )
+    icon = models.ImageField(
+        null=True,
+        blank=True,
+        upload_to=UploadTo("item_id"),
+        verbose_name=_("Item Icon"),
+        help_text=_("Small icon to be displayed"),
     )
     guide = models.URLField(blank=True, verbose_name=_("Guide"), help_text=_("Link to build guide"))
 

@@ -7,6 +7,11 @@ from core.models import AbstractAttribute, AbstractItem, AbstractPull
 
 
 class ItemTypes(models.TextChoices):
+    """
+    Item Types
+    Either CHARACTER or LIGHT CONE
+    """
+
     CHARACTER = "CHARACTER", _("Character")
     LIGHT_CONE = "LIGHT CONE", _("Light Cone")
 
@@ -127,7 +132,7 @@ class Banner(models.Model):
         verbose_name_plural = _("Banners")
 
     def __str__(self):
-        return f"{self.gacha_id}" if self.item + f" - {self.item.name}" else ""
+        return f"{self.gacha_id}" if self.featured_item + f" - {self.featured_item.name}" else ""
 
 
 class Warp(AbstractPull):

@@ -14,7 +14,22 @@ class AuthkeyError(ApiError):
     """
 
 
+class AuthkeyTimeoutError(ApiError):
+    """
+    Error for timeouted authkeys
+    """
+
+
 class ApiConnectionError(ApiError):
     """
     Error for API connection errors
     """
+
+
+class GachaTypeError(Exception):
+    """
+    Error for invalid gacha types
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)

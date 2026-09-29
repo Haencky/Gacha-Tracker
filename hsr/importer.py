@@ -4,8 +4,8 @@ import requests
 
 from core.importer import AbstractParser, AbstractPullRecord
 
-from .exceptions import ApiConnectionError, AuthkeyError
-from .models import ItemTypes
+from .exceptions import ApiConnectionError, AuthkeyError, AuthkeyTimeoutError, GachaTypeError
+from .models import GachaTypes, ItemTypes
 
 IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
 # icons for paths are icon/path/{Pathname}.png (capital)
@@ -14,7 +14,7 @@ IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
 # images for characters are image/character_preview/{Item_ID}.png
 # images for light cones are image/light_cone_portrait/{Item_ID}.png
 # full arts for characters are image/character_portrait/{Item_ID}.png
-API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=10000"
+API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=5000"
 # authkey_ver=1
 # sign_type=2
 # lang={lang}
@@ -22,6 +22,22 @@ API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_re
 # gacha_type={gacha type}
 # authkey={authkey}
 # game_biz=hkrpg_global
+PET_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getBlindBoxLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global"
+# authkey = {authkey}
+# lang = {lang}
+
+COLLAB_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getLdGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=5000"
+# authkey={authkey}
+# lang={lang}
+# gacha_type={gacha_type}
+GACHA_TYPE_URLS = {
+    GachaTypes.STELLAR: API_URL,
+    GachaTypes.DEPARTURE: API_URL,
+    GachaTypes.CHARACTER_EVENT: API_URL,
+    GachaTypes.LIGHT_CONE_EVENT: API_URL,
+    GachaTypes.CHARACTER_COLLABORATION: COLLAB_API_URL,
+    GachaTypes.LIGHT_CONE_COLLABORATION: COLLAB_API_URL,
+}
 
 
 class WarpRecord(AbstractPullRecord):
@@ -75,50 +91,72 @@ class WarpRecord(AbstractPullRecord):
     def __hash__(self):
         return int(self.id)
 
-    @classmethod
-    def from_api(self, entry: dict, tz_offset: int) -> None:
-        """
-        Builds custom warp object based on HoYos API answer
-
-        Args:
-            entry(dict): single record entry
-            tz_offset(int): offset from utc time
-        """
-
 
 class ApiParser(AbstractParser):
-    def __init__(self, authkey: str):
+    def __init__(self, authkey: str, lang: str):
         self.authkey = authkey
+        self.lang = lang
 
-    def fetch(self):
-        pass
+    def fetch(self) -> list[WarpRecord]:
+        """
+        Iterates over all gacha types and append gacha records
+
+        Returns:
+            records(list): a list of all gacha records (unsorted)
+
+        Raises:
+            ApiConnectionError
+            AuthkeyError
+            AuthkeyTimeoutError
+            GachaTypeError
+        """
+        records = []
+        for x in GACHA_TYPE_URLS:
+            records.extend(self.fetch_gacha_type(x))
+        return records
 
     def fetch_gacha_type(self, gacha_type: str) -> list[WarpRecord]:
         """
         Fetches all entries for given gacha_type from HoYos API
 
         Args:
-            authkey(str): short time authentication token to for requesting API infos
             gacha_type(str): gacha type to be fetched
 
         Returns:
             records(list[WarpRecord]): list of all warp records
+
+        Raises:
+            ApiConnectionError
+            AuthkeyTimeoutError
+            AuthkeyError
+            GachaTypeError
         """
-        parsed = urlparse(API_URL)
+        url = GACHA_TYPE_URLS.get(gacha_type)
+        if url is None:
+            raise GachaTypeError(f"Unknown gacha type: {gacha_type}")
+        else:
+            parsed = urlparse(url)
+
         query_dict = parse_qs(parsed.query)
 
         query_dict["gacha_type"] = [gacha_type]
         query_dict["authkey"] = [self.authkey]
+        query_dict["lang"] = [self.lang]
         new_query = urlencode(query_dict, doseq=True)
         url = urlunparse(parsed._replace(query=new_query))
 
         try:
             response = requests.get(url, timeout=10)
             if not response.status_code == 200:  # http code not "OK"
-                raise ApiConnectionError()
+                raise ApiConnectionError("Invalid HTTP response")
             j = response.json()
-            if j["retcode"] != 0:  # http ok, but retcode not ok
-                raise AuthkeyError(j["message"])
+            retcode = j["retcode"]
+            if retcode == -101:  # http ok, authkey too old
+                raise AuthkeyTimeoutError(j["message"], retcode=retcode)
+            elif retcode == -100:  # invalid authkey
+                raise AuthkeyError(j["message"], retcode=retcode)
+            elif retcode != 0:
+                raise ApiConnectionError(j["message"], retcode=retcode)  # other error
         except requests.RequestException as e:  # no http response
             raise ApiConnectionError("No HTTP response") from e
 

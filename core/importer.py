@@ -31,3 +31,19 @@ class AbstractParser(ABC):
         Returns:
             records(list[AbstractPullRecord])
         """
+
+
+class AbstractPullWriter(ABC):
+    """
+    Abstract base class for custom writer classes
+    """
+
+    @abstractmethod
+    def write(self, record: AbstractPullRecord):
+        """
+        Writes given pull record to database
+        Calls support functions if needed
+
+        Args:
+            record(AbstractPullRecord): pull to be written to the DB
+        """

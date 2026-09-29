@@ -33,3 +33,24 @@ class GachaTypeError(Exception):
 
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class ItemCatalogError(Exception):
+    """
+    Base class for item catalog errors
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ItemCatalogUnknownTypeError(ItemCatalogError):
+    """
+    Error if "characters" and "lightcones" got renamed
+    """
+
+
+class ItemCatalogItemDoesNotExistError(ItemCatalogError):
+    """
+    Error if item_id does not exists in response json
+    """

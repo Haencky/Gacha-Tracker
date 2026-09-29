@@ -3,9 +3,8 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import AbstractAttribute, AbstractItem, AbstractPull
 
+
 # Create your models here.
-
-
 class ItemTypes(models.TextChoices):
     """
     Item Types
@@ -47,6 +46,32 @@ class DamageType(AbstractAttribute):
         verbose_name_plural = _("Damage Types")
 
 
+class ItemManager(models.Manager):
+    """
+    Custom manager to add functionalities for import
+    """
+
+    def create_from_catalog(self, entry, name, rarity):
+        """
+        Takes an catalog entry and creates specified item and all needed objects
+        """
+        path, _ = Path.objects.get_or_create(name=entry.path)
+        if entry.damage_type:
+            damage_type, _ = DamageType.objects.get_or_create(name=entry.damage_type)
+        else:
+            damage_type = None
+        return self.create(
+            name=name,
+            rarity=rarity,
+            eng_name=entry.eng_name,
+            path=path,
+            damage_type=damage_type,
+            item_type=entry.item_type,
+            item_id=entry.item_id,
+            guide=entry.guide,
+        )
+
+
 class Item(AbstractItem):
     """
     Item for HSR
@@ -58,6 +83,7 @@ class Item(AbstractItem):
         item_type(str): either 'LIGHT CONE' or 'CHARACTER'
     """
 
+    objects = ItemManager()
     path = models.ForeignKey(
         Path,
         on_delete=models.PROTECT,
@@ -132,7 +158,9 @@ class Banner(models.Model):
         verbose_name_plural = _("Banners")
 
     def __str__(self):
-        return f"{self.gacha_id}" if self.featured_item + f" - {self.featured_item.name}" else ""
+        return (
+            f"{self.featured_item.name} ({self.gacha_id})" if self.featured_item else self.gacha_id
+        )
 
 
 class Warp(AbstractPull):

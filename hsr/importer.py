@@ -1,12 +1,51 @@
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
+from django.utils.text import slugify
 
-from core.importer import AbstractParser, AbstractPullRecord
+from core.importer import AbstractParser, AbstractPullRecord, AbstractPullWriter
 
-from .exceptions import ApiConnectionError, AuthkeyError, AuthkeyTimeoutError, GachaTypeError
-from .models import GachaTypes, ItemTypes
+from .exceptions import (
+    ApiConnectionError,
+    AuthkeyError,
+    AuthkeyTimeoutError,
+    GachaTypeError,
+    ItemCatalogError,
+    ItemCatalogItemDoesNotExistError,
+    ItemCatalogUnknownTypeError,
+)
+from .models import Banner, DamageType, GachaTypes, Item, ItemTypes, Path
 
+FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
+FRIBBELS_ELEMENTS = {
+    "Physical": "Physical",
+    "Quantum": "Quantum",
+    "Wind": "Wind",
+    "Imaginary": "Imaginary",
+    "Fire": "Fire",
+    "Ice": "Ice",
+    "Lightning": "Thunder",
+}  # mapping for element names to star rail res image names
+PRYDWEN_GUIDE = "https://www.prydwen.gg/star-rail/characters/{slug}"
+PRYDWEN_SPECIAL_NAMES = {
+    "1213": "imbibitor-lunae",
+    "1413": "march-7th-evernight",
+    "1224": "march-7th-swordmaster",
+    "1507": "blade-mortenax",  # idk
+    "1506": "silver-wolf-lv-999",  # django slugify error
+    "1225": "tingyun-fugue",
+    "1112": "topaz",  # where is numby ? :(
+    "8001": "trailblazer-destoruction",
+    "8002": "trailblazer-destruction",
+    "8003": "trailblazer-preservation",
+    "8004": "trailblazer-preservation",
+    "8005": "trailblazer-harmony",
+    "8006": "trailblazer-harmony",
+    "8007": "trailblazer-remembrance",
+    "8008": "trailblazer-remembrance",
+    "8009": "trailblazer-elation",
+    "8010": "trailblazer-elation",
+}
 IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
 # icons for paths are icon/path/{Pathname}.png (capital)
 # icons for elements are icon/element/{Element}.png (capital)
@@ -15,13 +54,7 @@ IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
 # images for light cones are image/light_cone_portrait/{Item_ID}.png
 # full arts for characters are image/character_portrait/{Item_ID}.png
 API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=5000"
-# authkey_ver=1
-# sign_type=2
-# lang={lang}
-# size=10_000
-# gacha_type={gacha type}
-# authkey={authkey}
-# game_biz=hkrpg_global
+
 PET_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getBlindBoxLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global"
 # authkey = {authkey}
 # lang = {lang}
@@ -38,6 +71,108 @@ GACHA_TYPE_URLS = {
     GachaTypes.CHARACTER_COLLABORATION: COLLAB_API_URL,
     GachaTypes.LIGHT_CONE_COLLABORATION: COLLAB_API_URL,
 }
+
+
+# SUPPORT CLASSES #
+
+
+class CatalogEntry:
+    """
+    Entry class for item catalog entries
+
+    Attributes:
+        eng_name(str): english item name
+        item_id(str): item id
+        damage_type(str): element of character
+        path(str): name of path
+        guide(str):
+    """
+
+    def __init__(
+        self,
+        eng_name: str,
+        item_id: str,
+        path: str,
+        item_type: str,
+        damage_type: str | None = None,
+        guide: str = "",
+    ):
+        self.eng_name = eng_name
+        self.item_id = item_id
+        self.damage_type = damage_type
+        self.path = path
+        self.item_type = item_type
+        self.guide = guide
+
+
+class ItemCatalog:
+    """
+    Support class for holding all available items
+    """
+
+    def __init__(self, characters: dict, light_cones: dict):
+        """
+        Args:
+            characters(dict): dictionary of fribbels characters
+            light_cones(dict): dictionary of fribbels light cones
+        """
+        self.characters = characters
+        self.light_cones = light_cones
+
+    @classmethod
+    def load(cls):
+        try:
+            response = requests.get(FRIBBELS_ITEM_URL, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+        except requests.RequestException as e:
+            raise ItemCatalogError("Could not get fribbels items") from e
+
+        try:
+            light_cones = data["lightCones"]
+        except KeyError as e:
+            raise ItemCatalogUnknownTypeError("lightcone is not a valid key in items") from e
+
+        try:
+            chars = data["characters"]
+            characters = {key: value for key, value in chars.items() if key.isdigit()}
+        except KeyError as e:
+            raise ItemCatalogUnknownTypeError("characters is not a valid key in items") from e
+
+        return cls(light_cones=light_cones, characters=characters)
+
+    def get(self, item_id: str) -> CatalogEntry:
+        """
+        Returns a catalog entry object for specified id
+
+        Args:
+            item_id(str): item id to be returned
+
+        Raises:
+            ItemCatalogItemDoesNotExistError
+        """
+        if raw := self.characters.get(item_id):
+            return CatalogEntry(
+                item_id=raw["id"],
+                eng_name=raw["name"],
+                path=raw["path"],
+                damage_type=raw["element"],
+                item_type=ItemTypes.CHARACTER,
+                guide=PRYDWEN_GUIDE.format(
+                    slug=PRYDWEN_SPECIAL_NAMES.get(item_id, slugify(raw["name"]))
+                ),
+            )
+        elif raw := self.light_cones.get(item_id):
+            return CatalogEntry(
+                item_id=raw["id"],
+                eng_name=raw["name"],
+                path=raw["path"],
+                item_type=ItemTypes.LIGHT_CONE,
+            )
+        else:
+            raise ItemCatalogItemDoesNotExistError(
+                f"Item with item_id {item_id} does not exist in source"
+            )
 
 
 class WarpRecord(AbstractPullRecord):
@@ -92,6 +227,7 @@ class WarpRecord(AbstractPullRecord):
         return int(self.id)
 
 
+# PARSER #
 class ApiParser(AbstractParser):
     def __init__(self, authkey: str, lang: str):
         self.authkey = authkey
@@ -178,3 +314,20 @@ class ApiParser(AbstractParser):
             )
             for e in entries
         ]
+
+
+# WRITER #
+class RecordWriter(AbstractPullWriter):
+    def __init__(self):
+        self.paths = Path.objects.in_bulk()
+        self.items = Item.objects.in_bulk()
+        self.dtypes = DamageType.objects.in_bulk()
+        self.banners = Banner.objects.in_bulk()
+
+    def write(record: WarpRecord):
+        """
+        Writes given record to DB
+
+        Arguments:
+           record(WarpRecord): record to be written in DB
+        """

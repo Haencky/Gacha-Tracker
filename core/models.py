@@ -14,15 +14,21 @@ class UploadTo:
 
     Args:
         field(str): name of the model field used as filename (e.g. 'name')
+        subfolder(str): subfolder (e.g. 'portrait' or 'icon')
     """
 
-    def __init__(self, field: str):
+    def __init__(self, field: str, subfolder: str = ""):
         self.field = field
+        self.subfolder = subfolder
 
     def __call__(self, instance, filename):
+        path = [instance._meta.app_label, instance._meta.model_name]
+        if self.subfolder:
+            path.append(self.subfolder)
         stem = slugify(str(getattr(instance, self.field)))
         suffix = Path(filename).suffix.lower()
-        return f"{instance._meta.app_label}/{instance._meta.model_name}/{stem}{suffix}"
+        path.append(f"{stem}{suffix}")
+        return "/".join(path)
 
 
 class AbstractItem(models.Model):
@@ -49,14 +55,14 @@ class AbstractItem(models.Model):
     portrait = models.ImageField(
         null=True,
         blank=True,
-        upload_to=UploadTo("item_id"),
+        upload_to=UploadTo("item_id", "portrait"),
         verbose_name=_("Item Portrait"),
         help_text=_("Image to be displayed"),
     )
     icon = models.ImageField(
         null=True,
         blank=True,
-        upload_to=UploadTo("item_id"),
+        upload_to=UploadTo("item_id", "icon"),
         verbose_name=_("Item Icon"),
         help_text=_("Small icon to be displayed"),
     )

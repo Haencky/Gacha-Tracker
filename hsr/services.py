@@ -1,0 +1,154 @@
+from dataclasses import dataclass
+
+import requests
+from django.core.files.base import ContentFile
+from django.db.models import Q
+
+from core.models import AbstractAttribute
+
+from .models import DamageType, Item, ItemTypes, Path
+
+FRIBBELS_ELEMENTS = {
+    "Lightning": "Thunder",
+}  # mapping for element names to star rail res image names
+
+IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
+# icons for paths are icon/path/{Pathname}.png (capital)
+# icons for elements are icon/element/{Element}.png (capital)
+# icons for characters are icon/character/{Item_ID}.png
+# images for characters are image/character_preview/{Item_ID}.png
+# images for light cones are image/light_cone_portrait/{Item_ID}.png
+# full arts for characters are image/character_portrait/{Item_ID}.png
+
+ITEM_IMAGE_PATHS = {
+    (ItemTypes.CHARACTER, "icon"): "icon/character/{item_id}.png",
+    (ItemTypes.CHARACTER, "portrait"): "image/character_preview/{item_id}.png",
+    (ItemTypes.CHARACTER, "fullart"): "image/character_portrait/{item_id}.png",
+    (ItemTypes.LIGHT_CONE, "portrait"): "image/light_cone_portrait/{item_id}.png",
+}
+
+ATTRIBUTE_IMAGE_PATHS = {Path: "icon/path/{name}.png", DamageType: "icon/element/{name}.png"}
+
+
+@dataclass
+class DownloadCount:
+    """
+    Result class for downloads
+
+    Attributes:
+        success(int): amount of successfull downloads
+        fail(int): amount of failed downloads
+    """
+
+    success: int
+    fail: int
+
+
+@dataclass
+class ImageDownloadResult:
+    """
+    Support class to represent the result of updating images
+
+    Attributes:
+        item_icons(DownloadCount): information about item icons download
+        item_portraits(DownloadCount): information about item portraits download
+        path(DownloadCount): information about Path icon download
+        dtype(DownloadCount): information about DamageType icon download
+    """
+
+    item_icons: DownloadCount
+    item_portraits: DownloadCount
+    path: DownloadCount
+    dtype: DownloadCount
+
+
+def attribute_image_url(obj: AbstractAttribute):
+    """
+    Build attribute image url
+
+    Args:
+       obj(AbstractAttribute): either Path or DamageType
+    """
+    name = obj.name if isinstance(obj, Path) else FRIBBELS_ELEMENTS.get(obj.name, obj.name)
+    return IMAGE_URL + ATTRIBUTE_IMAGE_PATHS[type(obj)].format(name=name)
+
+
+def item_image_url(item: Item, kind: str):
+    """
+    Builds image url
+
+    Args:
+        item(Item): item with missing images
+        kind(str): kind of image (e.g. icon or portrait)
+    """
+    image_path = ITEM_IMAGE_PATHS[(item.item_type, kind)]
+    return IMAGE_URL + image_path.format(item_id=item.item_id)
+
+
+def _fetch_attribute_icon(attribute: type[AbstractAttribute]) -> DownloadCount:
+    """
+    Fetches missing icons for attribute types
+
+    Args:
+        attribute(AbstractAttribute): model to be updated
+
+    Returns:
+        result(tuple[int, int]): success count, fail count
+    """
+    entries = attribute.objects.filter(Q(icon__isnull=True) | Q(icon=""))
+    failed = 0
+    for e in entries:
+        icon_url = attribute_image_url(e)
+        try:
+            response = requests.get(icon_url, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException:
+            failed += 1
+            continue
+        e.icon.save(name=f"{e.name}.png", content=ContentFile(response.content), save=True)
+    return DownloadCount(success=(len(entries) - failed), fail=failed)
+
+
+def _fetch_item_images(kind: str) -> DownloadCount:
+    """
+    Fetches missing images for items
+
+    Args:
+        kind(str): kind name (portrait or icon)
+
+    Returns:
+        result(tuple[int, int]): successfull downloads, failed downloads
+    """
+    item_types = [t for t, k in ITEM_IMAGE_PATHS if k == kind]
+    items = Item.objects.filter(
+        Q(**{f"{kind}__isnull": True}) | Q(**{kind: ""}), item_type__in=item_types
+    )
+    failed = 0
+
+    for i in items:
+        url = item_image_url(i, kind)
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException:
+            failed += 1
+            continue
+        getattr(i, kind).save(
+            name=f"{i.item_id}.png", content=ContentFile(response.content), save=True
+        )
+    return DownloadCount(success=len(items) - failed, fail=failed)
+
+
+def download_missing_images() -> ImageDownloadResult:
+    """
+    Downloads all missing image files
+
+    Returns:
+        result(ImageDownloadResult): custom object containing count for success and fails
+    """
+    return ImageDownloadResult(
+        item_icons=_fetch_item_images("icon"),
+        item_portraits=_fetch_item_images("portrait"),
+        path=_fetch_attribute_icon(Path),
+        dtype=_fetch_attribute_icon(DamageType),
+    )

@@ -19,15 +19,6 @@ from .exceptions import (
 from .models import Banner, GachaTypes, Item, ItemTypes, Warp
 
 FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
-FRIBBELS_ELEMENTS = {
-    "Physical": "Physical",
-    "Quantum": "Quantum",
-    "Wind": "Wind",
-    "Imaginary": "Imaginary",
-    "Fire": "Fire",
-    "Ice": "Ice",
-    "Lightning": "Thunder",
-}  # mapping for element names to star rail res image names
 PRYDWEN_GUIDE = "https://www.prydwen.gg/star-rail/characters/{slug}"
 PRYDWEN_SPECIAL_NAMES = {
     "1213": "imbibitor-lunae",
@@ -48,13 +39,6 @@ PRYDWEN_SPECIAL_NAMES = {
     "8009": "trailblazer-elation",
     "8010": "trailblazer-elation",
 }
-IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
-# icons for paths are icon/path/{Pathname}.png (capital)
-# icons for elements are icon/element/{Element}.png (capital)
-# icons for characters are icon/character/{Item_ID}.png
-# images for characters are image/character_preview/{Item_ID}.png
-# images for light cones are image/light_cone_portrait/{Item_ID}.png
-# full arts for characters are image/character_portrait/{Item_ID}.png
 API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=5000"
 
 PET_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getBlindBoxLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global"

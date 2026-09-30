@@ -178,7 +178,11 @@ class Warp(AbstractPull):
     )
 
     banner = models.ForeignKey(
-        Banner, models.PROTECT, verbose_name=_("Banner"), help_text=_("Banner pull was made")
+        Banner,
+        models.PROTECT,
+        verbose_name=_("Banner"),
+        help_text=_("Banner pull was made"),
+        related_name="warps",
     )
     gacha_type = models.CharField(
         max_length=50,

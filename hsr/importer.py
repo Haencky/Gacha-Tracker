@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
+from django.db import transaction
 from django.utils.text import slugify
 
-from core.importer import AbstractParser, AbstractPullRecord, AbstractPullWriter
+from core.importer import AbstractParser, AbstractPullRecord, AbstractPullWriter, ImportResult
 
 from .exceptions import (
     ApiConnectionError,
@@ -14,7 +16,7 @@ from .exceptions import (
     ItemCatalogItemDoesNotExistError,
     ItemCatalogUnknownTypeError,
 )
-from .models import Banner, DamageType, GachaTypes, Item, ItemTypes, Path
+from .models import Banner, GachaTypes, Item, ItemTypes, Warp
 
 FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
 FRIBBELS_ELEMENTS = {
@@ -226,6 +228,12 @@ class WarpRecord(AbstractPullRecord):
     def __hash__(self):
         return int(self.id)
 
+    @property
+    def aware_time(self):
+        t = datetime.strptime(self.time, "%Y-%m-%d %H:%M:%S")
+        tz = timezone(timedelta(hours=self.time_zone_offset))
+        return t.replace(tzinfo=tz)
+
 
 # PARSER #
 class ApiParser(AbstractParser):
@@ -318,16 +326,82 @@ class ApiParser(AbstractParser):
 
 # WRITER #
 class RecordWriter(AbstractPullWriter):
-    def __init__(self):
-        self.paths = Path.objects.in_bulk()
+    def __init__(self, item_catalog: ItemCatalog):
+        """
+        Args:
+            item_catalog(ItemCatalog): item catalog providing all existing items
+        """
         self.items = Item.objects.in_bulk()
-        self.dtypes = DamageType.objects.in_bulk()
         self.banners = Banner.objects.in_bulk()
+        self.catalog = item_catalog
 
-    def write(record: WarpRecord):
+    def write(self, records: list[WarpRecord]) -> ImportResult:
         """
         Writes given record to DB
 
         Arguments:
-           record(WarpRecord): record to be written in DB
+           records(list): a list of warp records written to the db
+
+        Returns:
+            result(ImportResult): custom class
         """
+        incoming_ids = [x.id for x in records]
+        existing_ids = set(Warp.objects.filter(id__in=incoming_ids).values_list("id", flat=True))
+        new_records = [r for r in records if r.id not in existing_ids]
+
+        warps = []
+        unknown_items = set()
+        c_old_items = len(self.items)
+
+        with transaction.atomic():
+            for record in new_records:
+                try:
+                    item = self._get_item(record)
+                except ItemCatalogItemDoesNotExistError:
+                    unknown_items.add(record.item_id)
+                    continue
+                banner = self._get_banner(record.gacha_id)
+                warps.append(
+                    Warp(
+                        item=item,
+                        banner=banner,
+                        gacha_type=record.gacha_type,
+                        id=record.id,
+                        uid=record.uid,
+                        time=record.aware_time,
+                    )
+                )
+            Warp.objects.bulk_create(warps)
+        return ImportResult(
+            created=len(warps),
+            skipped=len(existing_ids),
+            new_items=len(self.items) - c_old_items,
+            unknown_items=unknown_items,
+        )
+
+    def _get_item(self, warp_record: WarpRecord) -> Item:
+        """
+        Returns an item from db or creates it
+
+        Args:
+            warp_record(WarpRecord): warprecord containing item information
+        """
+        item = self.items.get(warp_record.item_id)
+        if item is not None:
+            return item
+        else:
+            entry = self.catalog.get(warp_record.item_id)
+            new_item = Item.objects.create_from_catalog(
+                entry=entry, name=warp_record.item_name, rarity=warp_record.rarity
+            )
+            self.items[new_item.item_id] = new_item
+            return new_item
+
+    def _get_banner(self, gacha_id: str):
+        banner = self.banners.get(gacha_id)
+        if banner is not None:
+            return banner
+        else:
+            banner = Banner.objects.create(gacha_id=gacha_id)
+            self.banners[gacha_id] = banner
+            return banner

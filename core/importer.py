@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 
 class AbstractPullRecord(ABC):
@@ -39,11 +40,19 @@ class AbstractPullWriter(ABC):
     """
 
     @abstractmethod
-    def write(self, record: AbstractPullRecord):
+    def write(self, records: list[AbstractPullRecord]) -> ImportResult:
         """
-        Writes given pull record to database
+        Writes given pull records to database
         Calls support functions if needed
 
         Args:
-            record(AbstractPullRecord): pull to be written to the DB
+            record(list): pulls to be written to the DB
         """
+
+
+@dataclass
+class ImportResult:
+    created: int
+    skipped: int
+    new_items: int
+    unknown_items: set[str]

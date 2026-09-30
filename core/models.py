@@ -89,7 +89,9 @@ class AbstractPull(models.Model):
         verbose_name=_("Gacha Type"),
         help_text=_("Identifier of the gacha pool, defined by the game"),
     )
-    time = models.DateTimeField(verbose_name=_("Time"), help_text=_("Timestamp pull was made"))
+    time = models.DateTimeField(
+        verbose_name=_("Time"), help_text=_("Timestamp pull was made"), null=True, blank=True
+    )
 
     class Meta:
         abstract = True

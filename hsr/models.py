@@ -152,6 +152,12 @@ class Banner(models.Model):
         help_text=_("Gacha ID provided by HoYos API"),
         primary_key=True,
     )
+    gacha_type = models.CharField(
+        max_length=30,
+        verbose_name=_("Gacha Type"),
+        help_text=_("Gacha type"),
+        choices=GachaTypes,
+    )
 
     class Meta:
         verbose_name = _("Banner")

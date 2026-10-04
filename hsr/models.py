@@ -3,25 +3,10 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import AbstractAttribute, AbstractItem, AbstractPull
 
+from .choices import GachaTypes, ItemTypes
+from .constants import CELESTIAL_INVITES, FEATURED_TYPES
 
 # Create your models here.
-class ItemTypes(models.TextChoices):
-    """
-    Item Types
-    Either CHARACTER or LIGHT CONE
-    """
-
-    CHARACTER = "CHARACTER", _("Character")
-    LIGHT_CONE = "LIGHT CONE", _("Light Cone")
-
-
-class GachaTypes(models.TextChoices):
-    STELLAR = "1", _("Stellar Warp")
-    DEPARTURE = "2", _("Depature Warp")
-    CHARACTER_EVENT = "11", _("Character Event Warp")
-    LIGHT_CONE_EVENT = "12", _("Light Cone Event Warp")
-    CHARACTER_COLLABORATION = "21", _("Character Collaboration Warp")
-    LIGHT_CONE_COLLABORATION = "22", _("Light Cone Collaboration Warp")
 
 
 class Path(AbstractAttribute):
@@ -110,6 +95,10 @@ class Item(AbstractItem):
         help_text=_("Character or Light Cone"),
     )
 
+    @property
+    def is_standard(self) -> bool:
+        return self.item_id in CELESTIAL_INVITES
+
     class Meta(AbstractItem.Meta):
         verbose_name = _("Item")
         verbose_name_plural = _("Items")
@@ -175,14 +164,6 @@ class Warp(AbstractPull):
     Inherits attributes from Abstract Pull
     """
 
-    item = models.ForeignKey(
-        Item,
-        on_delete=models.PROTECT,
-        help_text=_("Item obtained in warp"),
-        verbose_name=_("Item"),
-        related_name="warps",
-    )
-
     banner = models.ForeignKey(
         Banner,
         models.PROTECT,
@@ -196,6 +177,21 @@ class Warp(AbstractPull):
         help_text=_("Identifier of the gacha pool (e.g. 1 for Stellar Warp)"),
         choices=GachaTypes,
     )
+
+    @property
+    def is_lost(self):
+        basic = self.item.rarity == 5 and self.gacha_type in FEATURED_TYPES
+        if not basic:
+            return basic
+        if self.banner.featured_item is not None:
+            lost = self.item.item_id != self.banner.featured_item.item_id
+        else:
+            lost = self.item.is_standard
+        return lost
+
+    @property
+    def is_highest_rank(self):
+        return self.item.rarity == 5
 
     class Meta(AbstractPull.Meta):
         verbose_name = _("Warp")

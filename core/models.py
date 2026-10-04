@@ -40,7 +40,8 @@ class AbstractItem(models.Model):
         name(str): item name
         eng_name(str): english item name
         rarity(int): rarity
-        image(str): path to item image
+        portrait(str|None): reference to portrait image
+        icon(str|None): reference to icon image
         guide(str): url to prydwen (or other guide) link
     """
 
@@ -99,11 +100,33 @@ class AbstractPull(models.Model):
         verbose_name=_("Time"), help_text=_("Timestamp pull was made"), null=True, blank=True
     )
 
+    item = models.ForeignKey(
+        "Item",
+        help_text=_("Item obtained in pull"),
+        verbose_name=_("Item"),
+        related_name="%(class)ss",
+        on_delete=models.PROTECT,
+    )
+
     class Meta:
         abstract = True
 
     def __str__(self):
         return f"{self.id} - {self.time}"
+
+    @property
+    def is_highest_rank(self):
+        """
+        Returns true if the pull contains the highest available rarity
+        """
+        raise NotImplementedError
+
+    @property
+    def is_lost(self):
+        """
+        Returns true if contains a standard item
+        """
+        raise NotImplementedError
 
 
 class AbstractAttribute(models.Model):

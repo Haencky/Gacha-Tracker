@@ -6,30 +6,9 @@ from django.db.models import Q
 
 from core.models import AbstractAttribute
 
-from .models import Banner, DamageType, GachaTypes, Item, ItemTypes, Path, Warp
-
-CELESTIAL_INVITES = [
-    "1003",  # Himeko
-    "1004",  # Welt
-    "1101",  # Bronya
-    "1102",  # Seele
-    "1104",  # Gepard
-    "1006",  # Silverwolf
-    "1107",  # Clara
-    "1205",  # Blade
-    "1208",  # Fu Xuan
-    "1209",  # Yanqing
-    "1211",  # Bailu
-    "1221",  # Yunli
-    "1302",  # Argenti
-    "23000",  # Night on the Milky Way
-    "23002",  # Something Irreplaceable
-    "23003",  # But the Battle Isn't Over
-    "23004",  # In the Name of the World
-    "23005",  # Moment of Victory
-    "23012",  # Sleep Like the Dead
-    "23013",  # Time Waits for No One
-]
+from .choices import ItemTypes
+from .constants import CELESTIAL_INVITES, FEATURED_TYPES
+from .models import Banner, DamageType, Item, Path, Warp
 
 FRIBBELS_ELEMENTS = {
     "Lightning": "Thunder",
@@ -184,15 +163,7 @@ def assign_featured_items() -> ServiceCount:
     Returns:
         result(ServiceCount): counts of successes and failures
     """
-    missing = Banner.objects.filter(
-        featured_item__isnull=True,
-        gacha_type__in=[
-            GachaTypes.LIGHT_CONE_EVENT,
-            GachaTypes.CHARACTER_EVENT,
-            GachaTypes.LIGHT_CONE_COLLABORATION,
-            GachaTypes.CHARACTER_COLLABORATION,
-        ],
-    )
+    missing = Banner.objects.filter(featured_item__isnull=True, gacha_type__in=FEATURED_TYPES)
     failed = 0
     for b in missing:
         warps = b.warps

@@ -1,7 +1,7 @@
 from django.apps import apps
 
 
-def all_gamaes():
+def all_games():
     """
     Return all games identified by their game key (normally the UIGF Key)
     """
@@ -15,4 +15,8 @@ def by_uigf_key(key: str):
     Args:
         key(str): str to identify the game
     """
-    return next((c for c in all_gamaes() if c.game_key == key), None)
+    return next((c for c in all_games() if c.game_key == key), None)
+
+
+def game_summary():
+    return [c.summary() for c in apps.get_app_configs()]

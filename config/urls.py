@@ -23,4 +23,5 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
+    path("hsr/", include("hsr.urls", namespace="hsr")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

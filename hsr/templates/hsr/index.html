@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Honkai: Star Rail{% endblock title %}
+
+{% block content %}
+    {% for t in types %}
+        <div>
+            <div>
+                {{ t.label }}
+            </div>
+            <div>
+                {{ t.count }}
+            </div>
+            <div>
+                {{ t.current_pity }} / {{ t.max_pity }}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock content %}

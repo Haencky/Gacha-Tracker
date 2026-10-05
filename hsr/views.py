@@ -1,11 +1,13 @@
-from core.stats import Stats, get_stats
+# Create your views here.
+from django.shortcuts import render
+
+from core.services.stats import Stats, get_stats
 
 from .choices import GachaTypes
 from .constants import FEATURED_TYPES, HARD_PITYS
 from .models import Warp
 
 
-# Create your views here.
 def index(request):
     types = []
     for t in GachaTypes:
@@ -27,3 +29,5 @@ def index(request):
                 "expected_pity": stat.expected_pity,
             }
         )
+
+    return render(request, "hsr/index.html", {"types": types})

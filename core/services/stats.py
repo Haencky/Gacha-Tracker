@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .models import AbstractItem, AbstractPull
+from ..models import AbstractItem, AbstractPull
 
 
 @dataclass

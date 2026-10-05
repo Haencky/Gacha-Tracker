@@ -26,14 +26,11 @@
                     {% for game in games %}
                         <li>
                             <a href="{% url game.url_name %}"
-                               {% if game.slug == current_game %}class="menu-active" aria-current="page"{% endif %}>{{ game.name }}</a>
+                               {% if game.slug == current_game %}class="menu-active" aria-current="page"{% endif %}>{{ game.verbose_name }}</a>
                         </li>
                     {% endfor %}
                 </ul>
             </nav>
-            <div class="navbar-end">
-                <a class="btn btn-primary btn-sm" href="{% url 'core:import' %}">{% translate "Import" %}</a>
-            </div>
         </header>
         <div id="messages"
              class="toast toast-top toast-end z-50"

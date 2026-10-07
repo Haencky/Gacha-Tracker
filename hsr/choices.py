@@ -14,7 +14,7 @@ class ItemTypes(models.TextChoices):
 
 class GachaTypes(models.TextChoices):
     STELLAR = "1", _("Stellar Warp")
-    DEPARTURE = "2", _("Depature Warp")
+    DEPARTURE = "2", _("Departure Warp")
     CHARACTER_EVENT = "11", _("Character Event Warp")
     LIGHT_CONE_EVENT = "12", _("Light Cone Event Warp")
     CHARACTER_COLLABORATION = "21", _("Character Collaboration Warp")

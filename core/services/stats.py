@@ -9,7 +9,8 @@ class Stats:
     guaranteed: bool
     last_win: AbstractItem | None
     current_pity: int
-    winrate: float | None
+    success_50_50: int | None
+    attempts_50_50: int | None
     expected_pity: float | None
 
 
@@ -51,6 +52,7 @@ def get_stats(pulls: list[AbstractPull], has_50_50: bool = True) -> Stats:
         guaranteed=guaranteed,
         last_win=last_win,
         current_pity=pity,
-        winrate=sum(won_50_50) / len(won_50_50) if won_50_50 else None,
+        success_50_50=sum(won_50_50) if won_50_50 else None,
+        attempts_50_50=len(won_50_50) if won_50_50 else None,
         expected_pity=sum(won_pitys) / len(won_pitys) if won_pitys else None,
     )

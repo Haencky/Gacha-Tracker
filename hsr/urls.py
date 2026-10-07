@@ -6,4 +6,6 @@ app_name = "hsr"
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("import/api/", views.import_api_view, name="import-api"),
+    path("items/search/", views.search_item, name="item-search"),
 ]

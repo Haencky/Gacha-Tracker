@@ -1,6 +1,7 @@
 # Create your views here.
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
+from django.db.models.functions import Least
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 
@@ -116,8 +117,10 @@ def search_item(request):
     Searches for items
     """
     query = request.GET.get("q", "")
-    items = Item.objects.filter(Q(name__icontains=query) | Q(eng_name__icontains=query)).annotate(
-        pulls=Count("warps")
+    items = (
+        Item.objects.filter(Q(name__icontains=query) | Q(eng_name__icontains=query))
+        .annotate(pulls=Count("warps"))
+        .annotate(eidolon=Least(F("pulls") - 1, 6), lvl=Least(F("pulls"), 5))
     )
     items = items.order_by("-rarity", "name")
     if not query:

@@ -1,6 +1,6 @@
 # Create your views here.
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 
@@ -15,7 +15,6 @@ from .models import Item, Warp
 
 def index(request):
     types = []
-    items = Item.objects.all()
     for t in GachaTypes:
         warps = (
             Warp.objects.filter(gacha_type=t)
@@ -42,7 +41,7 @@ def index(request):
             }
         )
 
-    return render(request, "hsr/index.html", {"types": types, "games": all_games(), "items": items})
+    return render(request, "hsr/index.html", {"types": types, "games": all_games()})
 
 
 def import_api_view(request):
@@ -117,7 +116,11 @@ def search_item(request):
     Searches for items
     """
     query = request.GET.get("q", "")
-    items = Item.objects.filter(Q(name__icontains=query) | Q(eng_name__icontains=query))
+    items = Item.objects.filter(Q(name__icontains=query) | Q(eng_name__icontains=query)).annotate(
+        pulls=Count("warps")
+    )
+    items = items.order_by("-rarity", "name")
+    if not query:
+        items = None
 
-    items = items.order_by("name", "-rarity")
     return render(request, "hsr/partials/item_list.html", {"items": items})

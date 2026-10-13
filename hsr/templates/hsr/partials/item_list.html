@@ -1,26 +1,40 @@
 <div class="overflow-x-auto" id="item-list">
     {% if items %}
-        <table class="table">
+        <table class="table table-sm">
             <!-- head -->
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Path</th>
+                    <th>Count</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in items %}
-                    <!-- row 1 -->
                     <tr>
                         <td>
                             <div class="flex items-center gap-3">
-                                <div class="avatar">
-                                    <div class="mask mask-squircle h-12 w-12">
-                                        {% if item.portrait %}
-                                            <img src="{{ item.portrait.url }}" alt="{{ item.name }}" />
-                                        {% else %}
-                                            {{ item.name }}
-                                        {% endif %}
+                                <div class="{% if item.rarity == 5 %}aura aura-gold{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %}">
+                                    <div class="avatar">
+                                        <div class="mask mask-squircle h-12 w-12">
+                                            {% if item.item_type == "LIGHT CONE" %}
+                                                {% if item.portrait %}
+                                                    <img src="{{ item.portrait.url }}"
+                                                         alt="{{ item.name }}"
+                                                         loading="lazy" />
+                                                {% else %}
+                                                    {{ item.name }}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if item.icon %}
+                                                    <img src="{{ item.icon.url }}"
+                                                         alt="{{ item.name }}"
+                                                         loading="lazy" />
+                                                {% else %}
+                                                    {{ item.name }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 <div>
@@ -31,17 +45,20 @@
                                 </div>
                             </div>
                         </td>
-                        {% if item.path.icon %}
-                            <td>
+                        <td>
+                            {% if item.path.icon %}
                                 <div class="avatar">
                                     <div class="mask mask-squircle h-12 w-12">
-                                        <img src="{{ item.path.icon.url }}" alt="{{ item.path.name }}" />
+                                        <img src="{{ item.path.icon.url }}"
+                                             alt="{{ item.path.name }}"
+                                             loading="lazy" />
                                     </div>
                                 </div>
-                            </td>
-                        {% else %}
-                            {{ item.path.name }}
-                        {% endif %}
+                            {% else %}
+                                {{ item.path.name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.pulls }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -2,7 +2,7 @@
 from django.contrib import messages
 from django.db.models import Count, F, Q
 from django.db.models.functions import Least
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core.games import all_games
@@ -127,3 +127,24 @@ def search_item(request):
         items = None
 
     return render(request, "hsr/partials/item_list.html", {"items": items})
+
+
+def detail_item(request, item_id: str):
+    """
+    Returns detailed information about given item
+
+    Args:
+        item_id(str): unique item identifier
+    """
+
+    item = get_object_or_404(Item, item_id=item_id)
+    warps = item.warps.order_by("-time")
+    count = len(warps)
+    eidolon = min(count - 1, 6)
+    lvl = min(count, 5)
+
+    return render(
+        request,
+        "hsr/item_detail.html",
+        {"item": item, "warps": warps, "count": count, "eidolon": eidolon, "lvl": lvl},
+    )

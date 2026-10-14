@@ -8,6 +8,7 @@
                     <th>Name</th>
                     <th>Type</th>
                     <th></th>
+                    <th>Detail</th>
                 </tr>
             </thead>
             <tbody>
@@ -76,6 +77,10 @@
                             {% else %}
                                 -
                             {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'hsr:item-detail' item.item_id %}"
+                               class="btn btn-xs sm:btn-sm md:btn-md lg:btn-lg xl:btn-xl">Details</a>
                         </td>
                     </tr>
                 {% endfor %}

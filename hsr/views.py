@@ -5,7 +5,6 @@ from django.db.models.functions import Least
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
-from core.games import all_games
 from core.services.stats import Stats, get_stats
 
 from .choices import GachaTypes
@@ -42,7 +41,7 @@ def index(request):
             }
         )
 
-    return render(request, "hsr/index.html", {"types": types, "games": all_games()})
+    return render(request, "hsr/index.html", {"types": types})
 
 
 def import_api_view(request):

@@ -32,6 +32,10 @@
                 </ul>
             </nav>
         </header>
+        <div>
+            {% block subnav %}
+            {% endblock subnav %}
+        </div>
         <div id="messages"
              class="toast toast-top toast-end z-50"
              aria-live="polite">{% include "partials/messages.html" %}</div>

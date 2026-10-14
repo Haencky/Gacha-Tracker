@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block subnav %}
+    <nav class="navbar bg-base-100 border-t border-base-300 min-h-12">
+        <div class="navbar-start"> <a href='{% url "hsr:index" %}'
+    class="btn btn-ghost btn-sm">{% translate "Home" %}</a> </div>
+        <div>  <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a></div>
+        <div class="navbar-end">
+            <div class="dropdown dropdown-end">
+                <div>
+                    <label class="input">
+                        <svg class="h-[1em] opacity-50"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24">
+                            <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path>
+                            </g>
+                        </svg>
+                        <input type="search"
+                               required
+                               placeholder="Search"
+                               name="q"
+                               hx-get="{% url 'hsr:item-search' %}"
+                               hx-trigger="input changed delay:300ms, search"
+                               hx-target="#search-results" />
+                    </label>
+                </div>
+                <div class="dropdown-content" tabindex="-1" id="search-results"></div>
+            </div>
+        </div>
+    </nav>
+{% endblock subnav %}

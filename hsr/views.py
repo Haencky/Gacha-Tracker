@@ -125,7 +125,7 @@ def search_item(request):
     if not query:
         items = None
 
-    return render(request, "hsr/partials/item_list.html", {"items": items})
+    return render(request, "hsr/partials/item_menu.html", {"items": items})
 
 
 def detail_item(request, item_id: str):

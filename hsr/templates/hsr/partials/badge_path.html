@@ -1,0 +1,9 @@
+<span class="badge badge-outline badge-lg gap-1">
+    {% if path.icon %}
+        <img src="{{ path.icon.url }}"
+             alt="{{ path.name }}"
+             loading="lazy"
+             class="size-5" />
+    {% endif %}
+    {{ path.name }}
+</span>

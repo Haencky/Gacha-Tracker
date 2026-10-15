@@ -4,19 +4,7 @@
 {% block title %}{{ item.name }}{% endblock title %}
 {% block content %}
     <div class="grid gap-6 md:grid-cols-[auto_1fr]">
-        <div class="indicator self-start md:sticky md:top-4">
-            {% if item.item_type == "CHARACTER" %}
-                <div class="indicator-item indicator-top indicator-end">
-                    <img src="{{ item.damage_type.icon.url }}"
-                         alt="{{ item.damage_type.name }}"
-                         loading="lazy"
-                         class="rounded-full bg-base-100 p-1 size-10" />
-                </div>
-            {% endif %}
-            <img src="{{ item.portrait.url }}"
-                 alt="{{ item.name }}"
-                 class="{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %} rounded-box w-48 md:w-64 {% if count == 0 %}grayscale opacity-50{% endif %}" />
-        </div>
+        {% include "hsr/partials/item_portrait.html" with item=item only %}
         <div class="flex flex-col gap-6">
             <!--top area-->
             <div class="flex items-start justify-between gap-4">
@@ -35,46 +23,9 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <!--badges-->
-                <div class="badge badge-outline badge-lg gap-1">
-                    {% if item.rarity == 3 %}
-                        <img src="{% static 'hsr/Star3.png' %}"
-                             alt="★★★"
-                             loading="lazy"
-                             class="h-5 w-auto" />
-                    {% elif item.rarity == 4 %}
-                        <img src="{% static 'hsr/Star4.png' %}"
-                             alt="★★★★"
-                             loading="lazy"
-                             class="h-5 w-auto" />
-                    {% elif item.rarity == 5 %}
-                        <img src='{% static "hsr/Star5.png" %}'
-                             alt="★★★★★"
-                             loading="lazy"
-                             class="h-5 w-auto" />
-                    {% endif %}
-                </div>
-                <div class="badge badge-outline badge-lg gap-1">
-                    <img src="{{ item.path.icon.url }}"
-                         alt="{{ item.path.name }}"
-                         loading="lazy"
-                         class="size-5" />
-                    {{ item.path.name }}
-                </div>
-                <div class="badge badge-outline badge-lg gap-1">
-                    {% if item.item_type == "CHARACTER" %}
-                        <img src="{% static 'hsr/AvatarIcon.png' %}"
-                             alt="CHARACTER"
-                             loading="lazy"
-                             class="size-5" />
-                        {% translate "Character" %}
-                    {% else %}
-                        <img src="{% static 'hsr/Icon_Light_Cone.webp' %}"
-                             alt="LIGHT CONE"
-                             loading="lazy"
-                             class="size-5" />
-                        {% translate "Light Cone" %}
-                    {% endif %}
-                </div>
+                {% include "hsr/partials/badge_rarity.html" with rarity=item.rarity only %}
+                {% include "hsr/partials/badge_path.html" with path=item.path only %}
+                {% include "hsr/partials/badge_item_type.html" with item_type=item.item_type only %}
             </div>
             <div>
                 {% if count != 0 %}

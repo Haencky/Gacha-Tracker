@@ -1,5 +1,5 @@
 {% load static %}
-<span class="badge badge-outline badge-lg gap-1">
+<span class="badge {{ variant|default:'badge-outline' }} badge-lg gap-1 {{ extra_class }}">
     {% if rarity == 3 %}
         <img src="{% static 'hsr/Star3.png' %}"
              alt="★★★"

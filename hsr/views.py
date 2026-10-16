@@ -7,10 +7,10 @@ from django.utils.translation import gettext as _
 
 from core.services.stats import Stats, get_stats
 
-from .choices import GachaTypes
+from .choices import GachaTypes, ItemTypes
 from .constants import FEATURED_TYPES, HARD_PITYS
 from .forms import ImportUrlForm
-from .models import Item, Warp
+from .models import Item, Path, Warp
 
 
 def index(request):
@@ -116,11 +116,7 @@ def search_item(request):
     Searches for items
     """
     query = request.GET.get("q", "")
-    items = (
-        Item.objects.filter(Q(name__icontains=query) | Q(eng_name__icontains=query))
-        .annotate(pulls=Count("warps"))
-        .annotate(eidolon=Least(F("pulls") - 1, 6), lvl=Least(F("pulls"), 5))
-    )
+    items = Item.objects.filter(Q(name__icontains=query) | Q(eng_name__icontains=query))
     items = items.order_by("-rarity", "name")
     if not query:
         items = None
@@ -136,7 +132,7 @@ def detail_item(request, item_id: str):
         item_id(str): unique item identifier
     """
 
-    item = get_object_or_404(Item, item_id=item_id)
+    item = get_object_or_404(Item.objects.annotate(pulls=Count("warps")), item_id=item_id)
     warps = item.warps.order_by("-time")
     count = len(warps)
     eidolon = min(count - 1, 6)
@@ -146,4 +142,42 @@ def detail_item(request, item_id: str):
         request,
         "hsr/item_detail.html",
         {"item": item, "warps": warps, "count": count, "eidolon": eidolon, "lvl": lvl},
+    )
+
+
+def overview_item(request):
+    """
+    Overview of all obtained items
+    """
+    rar = request.GET.getlist("rarity")
+    path = request.GET.getlist("path")
+    types = request.GET.getlist("type")
+    items = (
+        Item.objects.all()
+        .annotate(pulls=Count("warps"))
+        .annotate(eidolon=Least(F("pulls") - 1, 6), lvl=Least(F("pulls"), 5))
+        .order_by("-rarity", "-pulls", "name")
+    )
+
+    if rar:
+        items = items.filter(rarity__in=rar)
+    if path:
+        items = items.filter(path__in=path)
+    if types:
+        items = items.filter(item_type__in=types)
+    paths = Path.objects.order_by("name")
+    rarities = Item.objects.values_list("rarity", flat=True).distinct().order_by("-rarity")
+
+    return render(
+        request,
+        "hsr/item_overview.html",
+        {
+            "items": items,
+            "paths": paths,
+            "rarities": rarities,
+            "item_types": ItemTypes.choices,
+            "selected_rarities": [int(r) if r.isdigit() else r for r in rar],
+            "selected_paths": [int(p) for p in path],
+            "selected_types": types,
+        },
     )

@@ -1,13 +1,15 @@
-<div class="indicator self-start md:sticky md:top-4">
+<div class="indicator {% if size != 'lg' %}w-full {% else %} {% endif %}">
     {% if item.item_type == "CHARACTER" %}
-        <div class="indicator-item indicator-top indicator-end">
-            <img src="{{ item.damage_type.icon.url }}"
-                 alt="{{ item.damage_type.name }}"
-                 loading="lazy"
-                 class="rounded-full bg-base-100 p-1 size-10" />
-        </div>
+        {% if item.damage_type.icon.url %}
+            <div class="indicator-item indicator-top indicator-end">
+                <img src="{{ item.damage_type.icon.url }}"
+                     alt="{{ item.damage_type.name }}"
+                     loading="lazy"
+                     class="rounded-full bg-base-100 p-1 {% if size == "lg" %}size-10{% else %}size-7{% endif %}" />
+            </div>
+        {% endif %}
     {% endif %}
     <img src="{{ item.portrait.url }}"
          alt="{{ item.name }}"
-         class="{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %} rounded-box w-48 md:w-64 {% if item.pulls == 0 %}grayscale opacity-50{% endif %}" />
+         class="{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %} rounded-box {% if size == "lg" %}w-48 md:w-64{% else %}aspect-376/512 object-coverw-full{% endif %} {% if item.pulls == 0 %}grayscale opacity-50{% endif %}" />
 </div>

@@ -1,17 +1,19 @@
 {% load static %}
 {% load i18n %}
-<span class="badge badge-outline badge-lg gap-1">
+<span class="badge {{ variant|default:'badge-outline' }} badge-lg gap-1 {{ extra_class }}">
     {% if item_type == "CHARACTER" %}
         <img src="{% static 'hsr/AvatarIcon.png' %}"
              alt="CHARACTER"
              loading="lazy"
              class="size-5" />
         {% translate "Character" %}
-    {% else %}
+    {% elif item_type == "LIGHT CONE" %}
         <img src="{% static 'hsr/Icon_Light_Cone.webp' %}"
              alt="LIGHT CONE"
              loading="lazy"
              class="size-5" />
         {% translate "Light Cone" %}
+    {% else %}
+        {{ item_type }}
     {% endif %}
 </span>

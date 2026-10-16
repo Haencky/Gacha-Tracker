@@ -1,10 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 {% load i18n %}
 {% block subnav %}
     <nav class="navbar bg-base-100 border-t border-base-300 min-h-12">
-        <div class="navbar-start"> <a href='{% url "hsr:index" %}'
-    class="btn btn-ghost btn-sm">{% translate "Home" %}</a> </div>
-        <div>  <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a></div>
+        <div class="navbar-start gap-1">
+            <a href='{% url "hsr:index" %}' class="btn btn-ghost btn-sm">{% translate "Home" %}</a>
+            <div>  <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a></div>
+            <div>
+                <a href='{% url "hsr:item-overview" %}' class="btn btn-sm btn-ghost">
+                    <img src='{% static "hsr/InventoryIcon.png" %}' alt="" class="h-5 w-auto" />
+                    {% translate "Items" %}
+                </a>
+            </div>
+        </div>
         <div class="navbar-end">
             <div class="dropdown dropdown-end">
                 <div>

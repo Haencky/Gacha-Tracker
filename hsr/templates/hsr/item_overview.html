@@ -1,0 +1,96 @@
+{% extends "hsr/base.html" %}
+{% load i18n %}
+{% load static %}
+{% block content %}
+    <div class="bg-base-100 rounded-box p-4">
+        <form hx-get='{% url "hsr:item-overview" %}'
+              hx-trigger="change"
+              hx-target="#item-grid"
+              hx-select="#item-grid"
+              hx-swap="outerHTML"
+              hx-push-url="true"
+              class="flex flex-col gap-4">
+            <!--legend-->
+            <fieldset class="flex items-baseline gap-4">
+                <legend class="float-left w-20 shrink-0 text-sm opacity-60">{% translate "Item Type" %}</legend>
+                <div class="flex flex-wrap gap-2">
+                    {% for value,label in item_types %}
+                        <label>
+                            <input type="checkbox"
+                                   name="type"
+                                   value="{{ value }}"
+                                   class="peer sr-only"
+                                   {% if value in selected_types %}checked{% endif %}>
+                            {% include "hsr/partials/badge_item_type.html" with item_type=value variant="badge-ghost" extra_class="cursor-pointer peer-checked:bg-primary peer-checked:border-primary peer-checked:text-primary-content peer-focus-visible:ring-2" only %}
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <fieldset class="flex items-baseline gap-4">
+                <legend class="float-left w-20 shrink-0 text-sm opacity-60">{% translate "Rarity" %}</legend>
+                <div class="flex flex-wrap gap-2">
+                    {% for rarity in rarities %}
+                        <label>
+                            <input type="checkbox"
+                                   name="rarity"
+                                   value="{{ rarity }}"
+                                   class="peer sr-only"
+                                   {% if rarity in selected_rarities %}checked{% endif %}>
+                            {% include "hsr/partials/badge_rarity.html" with rarity=rarity variant="badge-ghost" extra_class="cursor-pointer peer-checked:bg-primary peer-checked:border-primary peer-checked:text-primary-content peer-focus-visible:ring-2" only %}
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <fieldset class="flex items-baseline gap-4">
+                <legend class="float-left w-20 shrink-0 text-sm opacity-60">{% translate "Paths" %}</legend>
+                <div class="flex flex-wrap gap-2">
+                    {% for path in paths %}
+                        <label>
+                            <input type="checkbox"
+                                   name="path"
+                                   value="{{ path.pk }}"
+                                   class="peer sr-only"
+                                   {% if path.pk in selected_paths %}checked{% endif %}>
+                            {% include "hsr/partials/badge_path.html" with path=path variant="badge-ghost" extra_class="cursor-pointer peer-checked:bg-primary peer-checked:border-primary peer-checked:text-primary-content peer-focus-visible:ring-2" only %}
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-6"
+         id="item-grid">
+        {% for item in items %}
+            <a href="{% url 'hsr:item-detail' item.item_id %}"
+               class="card card-sm bg-base-100 shadow-sm">
+                {% include "hsr/partials/item_portrait.html" with item=item only %}
+                <div class="card-body p-3 gap-2 flex-1">
+                    <h2 class="flex items-start gap-2 min-w-0">
+                        <span class="text-sm font-semibold line-clamp-2">{{ item.name }}</span>
+                    </h2>
+                    <div class="card-actions justify-between mt-auto">
+                        {% if item.path.icon %}
+                            <div class="badge badge-outline">
+                                <img src="{{ item.path.icon.url }}"
+                                     alt="{{ item.path.name }}"
+                                     loading="lazy"
+                                     class="size-6" />
+                            </div>
+                        {% endif %}
+                        {% if item.pulls %}
+                            <div class="badge badge-outline badge-soft shrink-0">
+                                <img src='{% static "hsr/102.png" %}'
+                                     alt="{% translate "pulls" %}"
+                                     loading="lazy"
+                                     class="size-6" />
+                                {{ item.pulls }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        {% empty %}
+            <p class="col-span-full text-center opacity-60 py-8">{% translate "No items found for given filter" %}</p>
+        {% endfor %}
+    </div>
+{% endblock content %}

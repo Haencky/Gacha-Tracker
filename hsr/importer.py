@@ -1,3 +1,5 @@
+import sqlite3
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -15,6 +17,7 @@ from .exceptions import (
     ItemCatalogError,
     ItemCatalogItemDoesNotExistError,
     ItemCatalogUnknownTypeError,
+    LegacyFileError,
 )
 from .models import Banner, GachaTypes, Item, ItemTypes, Warp
 
@@ -57,6 +60,20 @@ GACHA_TYPE_URLS = {
     GachaTypes.CHARACTER_COLLABORATION: COLLAB_API_URL,
     GachaTypes.LIGHT_CONE_COLLABORATION: COLLAB_API_URL,
 }
+
+# legacy warps reference banners by their autoincrement id, gacha_id comes from the join
+LEGACY_QUERY = """
+    SELECT w.warp_id, w.uid, w.time,
+           b.gacha_id, g.gacha_type,
+           i.item_id, i.name, i.rarity
+    FROM warptracker_warp w
+    JOIN warptracker_banner b ON b.id = w.gacha_id_id
+    JOIN warptracker_gachatype g ON g.id = b.gacha_type_id
+    JOIN warptracker_item i ON i.item_id = w.item_id_id
+    ORDER BY w.warp_id
+"""
+STANDARD_BANNER_ID = "1001"
+PULL_ID_LENGTH = 19
 
 
 # SUPPORT CLASSES #
@@ -214,6 +231,8 @@ class WarpRecord(AbstractPullRecord):
 
     @property
     def aware_time(self):
+        if not self.time:  # legacy records may have no timestamp
+            return None
         t = datetime.strptime(self.time, "%Y-%m-%d %H:%M:%S")
         tz = timezone(timedelta(hours=self.time_zone_offset))
         return t.replace(tzinfo=tz)
@@ -308,6 +327,63 @@ class ApiParser(AbstractParser):
         ]
 
 
+class LegacyParser(AbstractParser):
+    """
+    Parses old db.sqlite from HSR-Warptracker
+    """
+
+    def __init__(self, path: str):
+        """
+        Args:
+            path(str): path to the db.sqlite file
+        """
+        self.path = path
+
+    def fetch(self) -> list[WarpRecord]:
+        """
+        Reads all warps from the legacy database (read only)
+
+        Returns:
+            records(list[WarpRecord]): all warp records, sorted by id
+
+        Raises:
+            LegacyFileError
+        """
+        try:
+            with closing(sqlite3.connect(f"file:{self.path}?mode=ro", uri=True)) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(LEGACY_QUERY).fetchall()
+        except sqlite3.DatabaseError as e:
+            raise LegacyFileError(f"Could not read legacy database: {e}") from e
+
+        return [self._to_record(row) for row in rows]
+
+    @staticmethod
+    def _to_record(row: sqlite3.Row) -> WarpRecord:
+        """
+        Converts a legacy row to a warp record
+
+        Args:
+            row(sqlite3.Row): row of LEGACY_QUERY
+        """
+        gacha_type = str(row["gacha_type"])
+        gacha_id = str(row["gacha_id"])
+        if gacha_type == GachaTypes.STELLAR and len(gacha_id) < len(STANDARD_BANNER_ID):
+            gacha_id = STANDARD_BANNER_ID
+
+        return WarpRecord(
+            id=str(row["warp_id"]).zfill(PULL_ID_LENGTH),
+            uid=str(row["uid"]),
+            rarity=row["rarity"],
+            item_id=str(row["item_id"]),
+            item_name=row["name"],
+            gacha_type=gacha_type,
+            gacha_id=gacha_id,
+            time=row["time"],
+            time_zone_offset=0,
+        )
+
+
 # WRITER #
 class RecordWriter(AbstractPullWriter):
     def __init__(self, item_catalog: ItemCatalog):
@@ -344,7 +420,7 @@ class RecordWriter(AbstractPullWriter):
                 except ItemCatalogItemDoesNotExistError:
                     unknown_items.add(record.item_id)
                     continue
-                banner = self._get_banner(record.gacha_id)
+                banner = self._get_banner(record.gacha_id, record.gacha_type)
                 warps.append(
                     Warp(
                         item=item,
@@ -381,11 +457,11 @@ class RecordWriter(AbstractPullWriter):
             self.items[new_item.item_id] = new_item
             return new_item
 
-    def _get_banner(self, gacha_id: str):
+    def _get_banner(self, gacha_id: str, gacha_type: str):
         banner = self.banners.get(gacha_id)
         if banner is not None:
             return banner
         else:
-            banner = Banner.objects.create(gacha_id=gacha_id)
+            banner = Banner.objects.create(gacha_id=gacha_id, gacha_type=gacha_type)
             self.banners[gacha_id] = banner
             return banner

@@ -1,6 +1,8 @@
 from urllib.parse import parse_qs, urlparse
 
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
+from django.utils.translation import gettext_lazy as _
 
 
 class ImportUrlForm(forms.Form):
@@ -20,6 +22,19 @@ class ImportUrlForm(forms.Form):
         authkey = query_dict.get("authkey", [None])[0]
 
         if not authkey:
-            raise forms.ValidationError("No authkey provided")
+            raise forms.ValidationError(_("No authkey provided"))
 
         return authkey, lang
+
+
+class ImportFileForm(forms.Form):
+    file = forms.FileField()
+
+    def clean_file(self) -> UploadedFile:
+        f = self.cleaned_data["file"]
+        begin = f.read(16)
+        f.seek(0)
+
+        if begin != b"SQLite format 3\x00":
+            raise forms.ValidationError(_("Invalid db file"))
+        return f

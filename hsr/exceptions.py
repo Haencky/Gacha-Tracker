@@ -54,3 +54,22 @@ class ItemCatalogItemDoesNotExistError(ItemCatalogError):
     """
     Error if item_id does not exists in response json
     """
+
+
+class FileError(Exception):
+    """
+    Error for unreadable files
+    """
+
+    def __init__(self, message: str, type: str = "legacy"):
+        self.type = type
+        super().__init__(message)
+
+
+class LegacyFileError(FileError):
+    """
+    Error if the legacy database file can not be read
+    """
+
+    def __init__(self, message, type="legacy"):
+        super().__init__(message, "legacy")

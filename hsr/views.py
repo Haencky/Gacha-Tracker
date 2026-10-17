@@ -1,4 +1,7 @@
 # Create your views here.
+import os
+from tempfile import NamedTemporaryFile
+
 from django.contrib import messages
 from django.db.models import Count, F, Q
 from django.db.models.functions import Least
@@ -9,8 +12,65 @@ from core.services.stats import Stats, get_stats
 
 from .choices import GachaTypes, ItemTypes
 from .constants import FEATURED_TYPES, HARD_PITYS
-from .forms import ImportUrlForm
+from .exceptions import (
+    ApiError,
+    AuthkeyError,
+    AuthkeyTimeoutError,
+    FileError,
+    ItemCatalogItemDoesNotExistError,
+)
+from .forms import ImportFileForm, ImportUrlForm
+from .importer import ApiParser, ItemCatalog, LegacyParser, RecordWriter
 from .models import Item, Path, Warp
+from .services import assign_featured_items, download_missing_images
+
+
+def _finish_import(request, result):
+    messages.success(
+        request,
+        _(f"Imported {result.created}, New items: {result.new_items}"),
+    )
+
+    if result.unknown_items:
+        messages.warning(request, f"Unknown items: {result.unknown_items}")
+    assignment = assign_featured_items()
+    if assignment.success:
+        messages.success(request, _(f"Successfully assigned {assignment.success} items"))
+    if assignment.fail:
+        messages.error(request, _(f"Failed to assign {assignment.fail} items"))
+    donwload = download_missing_images()
+    if s_icons := donwload.item_icons.success:
+        messages.success(request, _(f"Downloaded {s_icons} icons"))
+    if f_icons := donwload.item_icons.fail:
+        messages.error(request, _(f"Failed to download {f_icons} icons"))
+    if s_portraits := donwload.item_portraits.success:
+        messages.success(request, _(f"Downloaded  {s_portraits} portraits"))
+    if f_portraits := donwload.item_portraits.fail:
+        messages.error(request, _(f"Failed to download {f_portraits} portraits"))
+    if s_dtypes := donwload.dtype.success:
+        messages.success(request, _(f"Dpwnloaded {s_dtypes} damage type icons"))
+    if f_dtype := donwload.dtype.fail:
+        messages.error(request, _(f"Failed to download {f_dtype} damage type icons"))
+    if s_path := donwload.path.success:
+        messages.success(request, _(f"Downloaded {s_path} path icons"))
+    if f_path := donwload.path.fail:
+        messages.error(request, _(f"Failed to download {f_path} path icons"))
+
+
+def _render_import(
+    request,
+    url_form: ImportUrlForm = None,
+    file_form: ImportFileForm = None,
+    active_tab: str = "api",
+):
+    """
+    Support function for rendering the import forms
+    """
+    return render(
+        request,
+        "hsr/import.html",
+        {"url_form": url_form, "file_form": file_form, "active_tab": active_tab},
+    )
 
 
 def index(request):
@@ -45,14 +105,6 @@ def index(request):
 
 
 def import_api_view(request):
-    from .exceptions import (
-        ApiError,
-        AuthkeyError,
-        AuthkeyTimeoutError,
-        ItemCatalogItemDoesNotExistError,
-    )
-    from .importer import ApiParser, ItemCatalog, RecordWriter
-    from .services import assign_featured_items, download_missing_images
 
     if request.method == "POST":
         form = ImportUrlForm(request.POST)
@@ -69,46 +121,47 @@ def import_api_view(request):
             except ApiError:
                 messages.error(request, _("Failed to connect to the API"))
             except ItemCatalogItemDoesNotExistError as e:
-                messages.error(request, e.message)
+                messages.error(request, str(e))
             else:
-                messages.success(
-                    request,
-                    _(f"Imported {result.created}, New items: {result.new_items}"),
-                )
-                if result.unknown_items:
-                    messages.warning(request, f"Unknown items: {result.unknown_items}")
-                assignment = assign_featured_items()
-                if assignment.success:
-                    messages.success(
-                        request, _(f"Successfully assigned {assignment.success} items")
-                    )
-                if assignment.fail:
-                    messages.error(request, _(f"Failed to assign {assignment.fail} items"))
-                donwload = download_missing_images()
-                if s_icons := donwload.item_icons.success:
-                    messages.success(request, _(f"Downloaded {s_icons} icons"))
-                if f_icons := donwload.item_icons.fail:
-                    messages.error(request, _(f"Failed to download {f_icons} icons"))
-                if s_portraits := donwload.item_portraits.success:
-                    messages.success(request, _(f"Downloaded  {s_portraits} portraits"))
-                if f_portraits := donwload.item_portraits.fail:
-                    messages.error(request, _(f"Failed to download {f_portraits} portraits"))
-                if s_dtypes := donwload.dtype.success:
-                    messages.success(request, _(f"Dpwnloaded {s_dtypes} damage type icons"))
-                if f_dtype := donwload.dtype.fail:
-                    messages.error(request, _(f"Failed to download {f_dtype} damage type icons"))
-                if s_path := donwload.path.success:
-                    messages.success(request, _(f"Downloaded {s_path} path icons"))
-                if f_path := donwload.path.fail:
-                    messages.error(request, _(f"Failed to download {f_path} path icons"))
+                _finish_import(request, result)
                 return redirect("hsr:index")
+            return _render_import(request, url_form=form)
         else:
-            return render(request, "hsr/import_api.html", {"form": form})
+            return _render_import(request, url_form=form)
 
     else:
         form = ImportUrlForm()
-        return render(request, "hsr/import_api.html", {"form": form})
-    return redirect("hsr:index")
+        return _render_import(request, url_form=form)
+
+
+def import_file(request):
+    """
+    Takes file (UIGF, legacy db, Star Rail Station)
+    """
+    if request.method == "POST":
+        form = ImportFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = form.cleaned_data["file"]
+            tmp = NamedTemporaryFile(suffix=".sqlite3", delete=False)
+            for chunk in file.chunks():
+                tmp.write(chunk)
+            tmp.close()
+            try:
+                result = RecordWriter(ItemCatalog.load()).write(LegacyParser(tmp.name).fetch())
+            except FileError:
+                messages.error(request, _("File could not be read"))
+            else:
+                _finish_import(request, result)
+                return redirect("hsr:index")
+            finally:
+                os.remove(tmp.name)
+            return redirect("hsr:import-file")
+
+        else:
+            return _render_import(request, file_form=form)
+    else:
+        form = ImportFileForm()
+        return _render_import(request, file_form=form)
 
 
 def search_item(request):
@@ -132,8 +185,11 @@ def detail_item(request, item_id: str):
         item_id(str): unique item identifier
     """
 
-    item = get_object_or_404(Item.objects.annotate(pulls=Count("warps")), item_id=item_id)
-    warps = item.warps.order_by("-time")
+    item = get_object_or_404(
+        Item.objects.annotate(pulls=Count("warps")).select_related("damage_type", "path"),
+        item_id=item_id,
+    )
+    warps = item.warps.order_by("-id")
     count = len(warps)
     eidolon = min(count - 1, 6)
     lvl = min(count, 5)
@@ -153,10 +209,11 @@ def overview_item(request):
     path = request.GET.getlist("path")
     types = request.GET.getlist("type")
     items = (
-        Item.objects.all()
+        Item.objects.select_related("path", "damage_type")
+        .all()
         .annotate(pulls=Count("warps"))
         .annotate(eidolon=Least(F("pulls") - 1, 6), lvl=Least(F("pulls"), 5))
-        .order_by("-rarity", "-pulls", "name")
+        .order_by("-rarity", "-pulls", "item_type", "name")
     )
 
     if rar:

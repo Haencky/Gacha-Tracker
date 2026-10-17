@@ -1,5 +1,6 @@
 {% extends "hsr/base.html" %}
 {% load i18n %}
+{% load static %}
 {% block title %}Honkai: Star Rail · {{ block.super }}{% endblock title %}
 {% block content %}
     <div>
@@ -18,7 +19,10 @@
                                  class="h-full w-full object-cover"
                                  loading="lazy">
                         {% else %}
-                            <span class="px-2 text-center text-xs opacity-60">{{ t.last_win.name|default:"–" }}</span>
+                            <img src='{% static "hsr/1001.png" %}'
+                                 alt=""
+                                 class="h-full w-full object-cover grayscale opacity-50"
+                                 loading="lazy" />
                         {% endif %}
                     </figure>
                     <div class="card-body gap-3 p-4">
@@ -48,7 +52,7 @@
                                     {% if t.expected_pity is not None %}
                                         {{ t.expected_pity|floatformat:1 }}
                                     {% else %}
-                                        –
+                                        {% translate "No 5★ yet" %}
                                     {% endif %}
                                 </div>
                             </div>

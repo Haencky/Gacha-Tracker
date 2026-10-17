@@ -22,10 +22,12 @@ from .exceptions import (
 from .forms import ImportFileForm, ImportUrlForm
 from .importer import ApiParser, ItemCatalog, LegacyParser, RecordWriter
 from .models import Item, Path, Warp
-from .services import assign_featured_items, download_missing_images
+from .services import assign_featured_items, download_missing_images, recalculate_pity
 
 
 def _finish_import(request, result):
+    if result.created == 0:
+        return
     messages.success(
         request,
         _(f"Imported {result.created}, New items: {result.new_items}"),
@@ -34,6 +36,7 @@ def _finish_import(request, result):
     if result.unknown_items:
         messages.warning(request, f"Unknown items: {result.unknown_items}")
     assignment = assign_featured_items()
+    recalculate_pity()
     if assignment.success:
         messages.success(request, _(f"Successfully assigned {assignment.success} items"))
     if assignment.fail:

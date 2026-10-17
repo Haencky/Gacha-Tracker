@@ -2,11 +2,12 @@ from dataclasses import dataclass
 
 import requests
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.db.models import Q
 
 from core.models import AbstractAttribute
 
-from .choices import ItemTypes
+from .choices import FiftyFifty, GachaTypes, ItemTypes
 from .constants import CELESTIAL_INVITES, FEATURED_TYPES
 from .models import Banner, DamageType, Item, Path, Warp
 
@@ -175,4 +176,40 @@ def assign_featured_items() -> ServiceCount:
             b.save()
         else:
             failed += 1
-    return ServiceCount(success=missing.count() - failed, fail=failed)
+    return ServiceCount(success=len(missing) - failed, fail=failed)
+
+
+def recalculate_pity() -> None:
+    """
+    Recalculates pity and assignes 50/50 wins
+    """
+    updated = []
+    for g in GachaTypes:
+        pity = 0
+        guaranteed = False
+        warps = Warp.objects.select_related("item", "banner__featured_item").filter(gacha_type=g)
+        has_50_50 = g in FEATURED_TYPES
+        for w in warps:
+            pity += 1
+            w.pity = pity
+            w.fifty_fifty = ""
+            if w.is_highest_rank:
+                if has_50_50:
+                    if w.banner.featured_item is not None:
+                        lost = w.item.item_id != w.banner.featured_item.item_id
+                    else:
+                        lost = w.item.item_id in CELESTIAL_INVITES
+                    if not guaranteed:
+                        if lost:
+                            w.fifty_fifty = FiftyFifty.LOST
+                        else:
+                            w.fifty_fifty = FiftyFifty.WON
+                    else:
+                        w.fifty_fifty = FiftyFifty.GUARANTEED
+                    guaranteed = lost
+                pity = 0
+
+            updated.append(w)
+
+    with transaction.atomic():
+        Warp.objects.bulk_update(updated, ["pity", "fifty_fifty"], batch_size=500)

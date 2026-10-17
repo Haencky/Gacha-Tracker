@@ -3,8 +3,8 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import AbstractAttribute, AbstractItem, AbstractPull
 
-from .choices import GachaTypes, ItemTypes
-from .constants import CELESTIAL_INVITES, FEATURED_TYPES
+from .choices import FiftyFifty, GachaTypes, ItemTypes
+from .constants import CELESTIAL_INVITES
 
 # Create your models here.
 
@@ -178,16 +178,22 @@ class Warp(AbstractPull):
         choices=GachaTypes,
     )
 
+    pity = models.IntegerField(
+        verbose_name=_("Pity"), help_text=_("pull pity (1-xx)"), null=True, blank=True
+    )
+
+    fifty_fifty = models.CharField(
+        blank=True,
+        choices=FiftyFifty,
+        default=FiftyFifty.NONE,
+        max_length=10,
+        verbose_name=_("Fifty Fifty"),
+        help_text=_("Info about fifty fifty won or loss"),
+    )
+
     @property
     def is_lost(self):
-        basic = self.item.rarity == 5 and self.gacha_type in FEATURED_TYPES
-        if not basic:
-            return basic
-        if self.banner.featured_item is not None:
-            lost = self.item.item_id != self.banner.featured_item.item_id
-        else:
-            lost = self.item.is_standard
-        return lost
+        return self.fifty_fifty == FiftyFifty.LOST
 
     @property
     def is_highest_rank(self):
@@ -196,3 +202,5 @@ class Warp(AbstractPull):
     class Meta(AbstractPull.Meta):
         verbose_name = _("Warp")
         verbose_name_plural = _("Warps")
+        ordering = ["id"]
+        indexes = [models.Index(fields=["gacha_type", "id"])]

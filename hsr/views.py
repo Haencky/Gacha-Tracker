@@ -69,7 +69,11 @@ def _render_import(
     return render(
         request,
         "hsr/import.html",
-        {"url_form": url_form, "file_form": file_form, "active_tab": active_tab},
+        {
+            "url_form": url_form or ImportUrlForm(),
+            "file_form": file_form or ImportFileForm(),
+            "active_tab": active_tab,
+        },
     )
 
 
@@ -125,13 +129,13 @@ def import_api_view(request):
             else:
                 _finish_import(request, result)
                 return redirect("hsr:index")
-            return _render_import(request, url_form=form)
+            return _render_import(request, url_form=form, active_tab="api")
         else:
-            return _render_import(request, url_form=form)
+            return _render_import(request, url_form=form, active_tab="api")
 
     else:
         form = ImportUrlForm()
-        return _render_import(request, url_form=form)
+        return _render_import(request, url_form=form, active_tab="api")
 
 
 def import_file(request):
@@ -155,13 +159,13 @@ def import_file(request):
                 return redirect("hsr:index")
             finally:
                 os.remove(tmp.name)
-            return redirect("hsr:import-file")
+            return _render_import(request, file_form=form, active_tab="file")
 
         else:
-            return _render_import(request, file_form=form)
+            return _render_import(request, file_form=form, active_tab="file")
     else:
         form = ImportFileForm()
-        return _render_import(request, file_form=form)
+        return _render_import(request, file_form=form, active_tab="file")
 
 
 def search_item(request):

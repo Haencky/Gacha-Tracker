@@ -2,18 +2,18 @@
 {% load i18n %}
 {% block title %}{% translate "Import" %} · Honkai: Star Rail{% endblock title %}
 {% block content %}
-    <div class="tabs tabs-border">
-        <input type="radio"
-               name="my_tabs_2"
-               class="tab"
-               aria-label="URL"
-               checked="{% if active_tab == "url" %}checked{% endif %}" />
-        <div class="tab-content border-base-300 bg-base-100 p-10">
-            <div class="mx-auto max-w-2xl">
+    <div class="mx-auto max-w-2xl">
+        <h1 class="card-title text-2xl">{% translate "Import warps" %}</h1>
+        <div class="tabs tabs-border">
+            <input type="radio"
+                   name="my_tabs_2"
+                   class="tab"
+                   aria-label="URL"
+                   {% if active_tab == "api" %}checked{% endif %} />
+            <div class="tab-content border-base-300 bg-base-100 p-10">
                 <div class="card bg-base-100 shadow-sm">
                     <div class="card-body gap-6">
                         <div>
-                            <h1 class="card-title text-2xl">{% translate "Import warps" %}</h1>
                             <p class="opacity-70">{% translate "Import your warp history directly from the HoYoverse API." %}</p>
                         </div>
                         <ol class="list-decimal space-y-1 pl-5 text-sm opacity-80">
@@ -22,11 +22,11 @@
                             <li>{% translate "Paste it below and start the import." %}</li>
                         </ol>
                         <form method="post"
-                              action=""
+                              action="{% url 'hsr:import-api' %}"
                               class="flex flex-col gap-4"
                               hx-disabled-elt="find button[type='submit']">
                             {% csrf_token %}
-                            {% for error in form.non_field_errors %}
+                            {% for error in url_form.non_field_errors %}
                                 <div role="alert" class="alert alert-error alert-soft">{{ error }}</div>
                             {% endfor %}
                             <fieldset class="fieldset">
@@ -53,12 +53,37 @@
                     </div>
                 </div>
             </div>
+            <input type="radio"
+                   name="my_tabs_2"
+                   class="tab"
+                   aria-label="File"
+                   {% if active_tab == "file" %}checked{% endif %} />
+            <div class="tab-content border-base-300 bg-base-100 p-10">
+                <form method="post"
+                      action="{% url 'hsr:import-file' %}"
+                      enctype="multipart/form-data"
+                      class="flex flex-col gap-4"
+                      hx-disabled-elt="find button[type='submit']">
+                    {% csrf_token %}
+                    <fieldset class="fieldset">
+                        <legend class="fieldset-legend">{% translate "Database file" %}</legend>
+                        <input type="file"
+                               id="{{ file_form.file.id_for_label }}"
+                               name="{{ file_form.file.html_name }}"
+                               accept=".sqlite3,.sqlite,.db"
+                               required
+                               class="file-input w-full {% if file_form.file.errors %}file-input-error{% endif %}">
+                        {% for error in file_form.url.errors %}
+                            <p class="label text-error">{{ error }}</p>
+                        {% empty %}
+                        {% endfor %}
+                    </fieldset>
+                    <div class="card-actions items-center justify-end">
+                        <a href="{% url 'hsr:index' %}" class="btn btn-ghost">{% translate "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% translate "Start import" %}</button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <input type="radio"
-               name="my_tabs_2"
-               class="tab"
-               aria-label="Tab 2"
-               checked="{% if active_tab == "url" %}checked{% endif %}" />
-        <div class="tab-content border-base-300 bg-base-100 p-10">Tab content 2</div>
     </div>
 {% endblock content %}

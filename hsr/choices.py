@@ -19,3 +19,10 @@ class GachaTypes(models.TextChoices):
     LIGHT_CONE_EVENT = "12", _("Light Cone Event Warp")
     CHARACTER_COLLABORATION = "21", _("Character Collaboration Warp")
     LIGHT_CONE_COLLABORATION = "22", _("Light Cone Collaboration Warp")
+
+
+class FiftyFifty(models.TextChoices):
+    WON = "Won", _("Won")
+    LOST = "Lost", _("Lost")
+    GUARANTEED = "Guaranteed", _("Guaranteed")
+    NONE = "", _("-")

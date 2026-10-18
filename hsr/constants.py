@@ -1,4 +1,4 @@
-from .choices import GachaTypes
+from .choices import GachaTypes, ItemTypes
 
 CELESTIAL_INVITES = [
     "1003",  # Himeko
@@ -38,3 +38,12 @@ FEATURED_TYPES = [
     GachaTypes.LIGHT_CONE_EVENT,
     GachaTypes.LIGHT_CONE_COLLABORATION,
 ]
+
+ITEM_TYPES = {
+    GachaTypes.STELLAR: ItemTypes.CHARACTER,
+    GachaTypes.DEPARTURE: ItemTypes.CHARACTER,
+    GachaTypes.CHARACTER_EVENT: ItemTypes.CHARACTER,
+    GachaTypes.CHARACTER_COLLABORATION: ItemTypes.CHARACTER,
+    GachaTypes.LIGHT_CONE_EVENT: ItemTypes.LIGHT_CONE,
+    GachaTypes.LIGHT_CONE_COLLABORATION: ItemTypes.LIGHT_CONE,
+}

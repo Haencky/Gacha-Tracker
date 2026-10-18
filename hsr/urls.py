@@ -10,5 +10,6 @@ urlpatterns = [
     path("import/file/", views.import_file, name="import-file"),
     path("items/search/", views.search_item, name="item-search"),
     path("items/detail/<str:item_id>/", views.detail_item, name="item-detail"),
-    path("items/overview/", views.overview_item, name="item-overview"),
+    path("items/", views.overview_item, name="item-overview"),
+    path("banner/overview/<str:gacha_type>/", views.overview_banner, name="banner-overview"),
 ]

@@ -3,15 +3,16 @@ import os
 from tempfile import NamedTemporaryFile
 
 from django.contrib import messages
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Min, Q
 from django.db.models.functions import Least
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from core.services.stats import Stats, get_stats
 
-from .choices import GachaTypes, ItemTypes
-from .constants import FEATURED_TYPES, HARD_PITYS
+from .choices import FiftyFifty, GachaTypes, ItemTypes
+from .constants import FEATURED_TYPES, HARD_PITYS, ITEM_TYPES
 from .exceptions import (
     ApiError,
     AuthkeyError,
@@ -21,7 +22,7 @@ from .exceptions import (
 )
 from .forms import ImportFileForm, ImportUrlForm
 from .importer import ApiParser, ItemCatalog, LegacyParser, RecordWriter
-from .models import Item, Path, Warp
+from .models import Banner, Item, Path, Warp
 from .services import assign_featured_items, download_missing_images, recalculate_pity
 
 
@@ -105,6 +106,7 @@ def index(request):
                 "expected_pity": round(stat.expected_pity, 2) if stat.expected_pity else None,
                 "jade": stat.count * 160,
                 "euro": round(stat.count * 2.64, 2),
+                "item_type": ITEM_TYPES[t],
             }
         )
 
@@ -243,5 +245,36 @@ def overview_item(request):
             "selected_rarities": [int(r) if r.isdigit() else r for r in rar],
             "selected_paths": [int(p) for p in path],
             "selected_types": types,
+        },
+    )
+
+
+def overview_banner(request, gacha_type: str):
+    """
+    Overview about all pulled banner
+    """
+    available = set(Warp.objects.order_by().values_list("gacha_type", flat=True).distinct())
+    tabs = [t for t in GachaTypes if t in available and t in FEATURED_TYPES]
+    if gacha_type not in GachaTypes.values:
+        raise Http404
+    banner = (
+        Banner.objects.select_related("featured_item")
+        .filter(gacha_type=gacha_type)
+        .annotate(
+            pulls=Count("warps"),
+            first_pull=Min("warps__id"),
+            featured_pulls=Count("warps", filter=Q(warps__item=F("featured_item"))),
+            lost=Count("warps", filter=Q(warps__fifty_fifty=FiftyFifty.LOST)),
+        )
+        .order_by("-first_pull")
+    )
+    return render(
+        request,
+        "hsr/banner_overview.html",
+        {
+            "banner": banner,
+            "tabs": tabs,
+            "item_type": ITEM_TYPES[gacha_type],
+            "gacha_type": gacha_type,
         },
     )

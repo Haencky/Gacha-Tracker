@@ -1,5 +1,5 @@
 <div class="indicator {% if size != 'lg' %}w-full {% else %} {% endif %}">
-    {% if item.item_type == "CHARACTER" %}
+    {% if item.item_type == "CHARACTER" and not hide %}
         {% if item.damage_type.icon.url %}
             <div class="indicator-item indicator-top indicator-end">
                 <img src="{{ item.damage_type.icon.url }}"
@@ -11,5 +11,5 @@
     {% endif %}
     <img src="{{ item.portrait.url }}"
          alt="{{ item.name }}"
-         class="{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %} rounded-box {% if size == "lg" %}w-48 md:w-64{% else %}aspect-376/512 object-coverw-full{% endif %} {% if item.pulls == 0 %}grayscale opacity-50{% endif %}" />
+         class="{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %} rounded-box {% if size == "lg" %}w-48 md:w-64{% else %}aspect-376/512 object-cover w-full{% endif %} {% if item.pulls == 0 %}grayscale opacity-50{% endif %}" />
 </div>

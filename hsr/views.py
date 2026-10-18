@@ -3,7 +3,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 from django.contrib import messages
-from django.db.models import Count, F, Min, Q
+from django.db.models import Count, F, Max, Min, Q
 from django.db.models.functions import Least
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -280,20 +280,73 @@ def overview_banner(request, gacha_type: str):
     )
 
 
+def _distribution(counts: list[tuple[int, int]], total: int) -> list[dict]:
+    """
+    Builds the segments of the stacked rarity bar
+
+    Args:
+        counts(list[tuple[int, int]]): rarity and count pairs
+        total(int): total pulls
+
+    Returns:
+        segments(list[dict]): rarity, count, x offset and width in percent
+    """
+    segments = []
+    offset = 0
+    for rarity, count in counts:
+        width = count / total * 100
+        segments.append({"rarity": rarity, "count": count, "x": offset, "width": width})
+        offset += width
+    return segments
+
+
 def detail_banner(request, banner_id):
+    """
+    Detailed information about a banner, its warps and obtained items
+
+    Args:
+        banner_id(str): gacha id of the banner
+    """
+    four = Q(warps__item__rarity=4)
     banner = get_object_or_404(
-        Banner.objects.annotate(pulls=Count("warps")).select_related("featured_item"),
+        Banner.objects.select_related("featured_item").annotate(
+            pulls=Count("warps"),
+            five=Count("warps", filter=Q(warps__item__rarity=5)),
+            four=Count("warps", filter=four),
+            four_characters=Count(
+                "warps", filter=four & Q(warps__item__item_type=ItemTypes.CHARACTER)
+            ),
+            four_light_cones=Count(
+                "warps", filter=four & Q(warps__item__item_type=ItemTypes.LIGHT_CONE)
+            ),
+            featured_pulls=Count("warps", filter=Q(warps__item=F("featured_item"))),
+            lost=Count("warps", filter=Q(warps__fifty_fifty=FiftyFifty.LOST)),
+            first_time=Min("warps__time"),
+            last_time=Max("warps__time"),
+        ),
         gacha_id=banner_id,
     )
+    warps = list(banner.warps.select_related("item").order_by("-id"))
+    items = (
+        Item.objects.filter(warps__banner=banner, rarity__gte=4)
+        .annotate(obtained=Count("warps"))
+        .order_by("-rarity", "-obtained", "name")
+    )
+    three = banner.pulls - banner.five - banner.four
+    total = banner.pulls or 1
+
     return render(
         request,
         "hsr/banner_detail.html",
         {
-            "name": banner.name,
-            "featured_item": banner.featured_item,
+            "banner": banner,
             "item_type": ITEM_TYPES[banner.gacha_type],
-            "pulls": banner.pulls,
-            "characters": len(banner.warps.filter(item__item_type=ItemTypes.CHARACTER)),
-            "lcs": len(banner.warps.filter(item__item_type=ItemTypes.LIGHT_CONE)),
+            "has_50_50": banner.gacha_type in FEATURED_TYPES,
+            "warps": warps,
+            "items": items,
+            "five_pities": [w.pity for w in reversed(warps) if w.item.rarity == 5],
+            "distribution": _distribution(
+                [(5, banner.five), (4, banner.four), (3, three)], total
+            ),
         },
     )

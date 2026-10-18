@@ -1,33 +1,175 @@
 {% extends "hsr/base.html" %}
 {% load static %}
 {% load i18n %}
+{% block title %}
+    {% if banner.name %}
+        {{ banner.name }}
+    {% elif banner.featured_item %}
+        {{ banner.featured_item.name }}
+    {% else %}
+        {% translate "Unknown Banner" %}
+    {% endif %}
+{% endblock title %}
 {% block content %}
-    <h1 class="font-bold text-2xl mb-6">
-        {% if name %}
-            {{ name }}
-        {% elif featured_item %}
-            {{ featured_item.name }}
-        {% else %}
-            {% translate "Unknown Banner" %}
-        {% endif %}
-    </h1>
-    <div class="grid grid-cols-2">
-        <div class="card">
-            <figure>
-                {% if featured_item %}
-                    {% include "hsr/partials/item_portrait.html" with item=featured_item hide=True %}
-                {% else %}
-                    {% include "hsr/partials/unknown_item.html" with item_type=item_type %}
-                {% endif %}
-            </figure>
-            <div class="class-body">
-                <div class="card-actions">
-                    {% include "hsr/partials/badge_pulls.html" with pulls=pulls %}
-                    {% include "hsr/partials/badge_item_type.html" with item_type="CHARACTER" count=characters %}
-                    {% include "hsr/partials/badge_item_type.html" with item_type="LIGHT CONE" count=lcs %}
+    <div class="grid gap-6 md:grid-cols-[auto_1fr]">
+        <!--portrait-->
+        <div class="self-start md:sticky md:top-4">
+            {% if banner.featured_item.portrait %}
+                {% include "hsr/partials/item_portrait.html" with item=banner.featured_item size="lg" hide=True only %}
+            {% else %}
+                <div class="w-48 md:w-64 aspect-376/512 overflow-hidden rounded-box">
+                    {% include "hsr/partials/unknown_item.html" with item_type=item_type only %}
                 </div>
+            {% endif %}
+        </div>
+        <div class="flex flex-col gap-6 min-w-0">
+            <!--top area-->
+            <div>
+                <h1 class="text-3xl font-bold">
+                    {% if banner.name %}
+                        {{ banner.name }}
+                    {% elif banner.featured_item %}
+                        {{ banner.featured_item.name }}
+                    {% else %}
+                        {% translate "Unknown Banner" %}
+                    {% endif %}
+                </h1>
+                <p class="text-lg opacity-60">
+                    <span class="badge badge-outline">{{ banner.get_gacha_type_display }}</span>
+                    {% if banner.first_time %}
+                        <span class="badge badge-outline">{{ banner.first_time|date:"d.m.Y" }} – {{ banner.last_time|date:"d.m.Y" }}</span>
+                    {% endif %}
+                </p>
             </div>
-            <div>Test</div>
+            <!--badges-->
+            {% if has_50_50 %}
+                <div class="flex flex-wrap gap-2">
+                    {% if banner.featured_pulls and banner.lost %}
+                        <span class="badge badge-warning badge-lg">{% translate "Lost 50/50, then obtained" %}</span>
+                    {% elif banner.featured_pulls %}
+                        <span class="badge badge-success badge-lg">{% translate "Featured obtained" %}</span>
+                    {% elif banner.lost %}
+                        <span class="badge badge-error badge-lg">{% translate "Lost 50/50" %}</span>
+                    {% else %}
+                        <span class="badge badge-ghost badge-lg">{% translate "No 5★ yet" %}</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!--stats-->
+            <div class="flex flex-col gap-3">
+                <div class="stats stats-vertical sm:stats-horizontal bg-base-200 shadow">
+                    <div class="stat">
+                        <div class="stat-title">{% translate "Pulls" %}</div>
+                        <div class="stat-value">{{ banner.pulls }}</div>
+                        {% if banner.first_time %}
+                            <div class="stat-desc">{% translate "First:" %} {{ banner.first_time|date:"d.m.Y" }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">5★</div>
+                        <div class="stat-value text-amber-300">{{ banner.five }}</div>
+                        {% if five_pities %}
+                            <div class="stat-desc">{% translate "Pity" %} {{ five_pities|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">4★</div>
+                        <div class="stat-value text-purple-500">{{ banner.four }}</div>
+                        <div class="stat-desc">
+                            {{ banner.four_characters }} {% translate "Char" %} · {{ banner.four_light_cones }} {% translate "LC" %}
+                        </div>
+                    </div>
+                </div>
+                <!--rarity distribution-->
+                {% if banner.pulls %}
+                    {# svg attributes instead of inline styles, stringformat keeps a dot as decimal separator #}
+                    <svg class="block h-2 w-full overflow-hidden rounded-full bg-base-300"
+                         viewBox="0 0 100 1"
+                         preserveAspectRatio="none"
+                         role="img"
+                         aria-label="{% for s in distribution %}{{ s.rarity }}★ {{ s.count }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                        {% for s in distribution %}
+                            {% if s.count %}
+                                <rect x="{{ s.x|stringformat:'.2f' }}"
+                                      width="{{ s.width|stringformat:'.2f' }}"
+                                      height="1"
+                                      class="{% if s.rarity == 5 %}fill-amber-300{% elif s.rarity == 4 %}fill-purple-500{% else %}fill-blue-400{% endif %}">
+                                    <title>{{ s.rarity }}★: {{ s.count }}</title>
+                                </rect>
+                            {% endif %}
+                        {% endfor %}
+                    </svg>
+                {% endif %}
+            </div>
+            <!--items-->
+            {% if items %}
+                <div class="flex flex-col gap-3">
+                    <h2 class="text-xl font-semibold">{% translate "Items" %}</h2>
+                    <div class="flex flex-wrap gap-2">
+                        {% for item in items %}
+                            <a href="{% url 'hsr:item-detail' item.item_id %}"
+                               class="flex items-center gap-2 rounded-box bg-base-200 p-2 pr-3 transition-colors hover:bg-base-300">
+                                <div class="mask mask-squircle size-8 shrink-0 {% if item.rarity == 5 %}bg-warning/30{% else %}bg-secondary/30{% endif %}">
+                                    {% if item.item_type == "LIGHT CONE" and item.portrait %}
+                                        <img src="{{ item.portrait.url }}" alt="" loading="lazy" />
+                                    {% elif item.icon %}
+                                        <img src="{{ item.icon.url }}" alt="" loading="lazy" />
+                                    {% endif %}
+                                </div>
+                                <span class="text-sm font-semibold">{{ item.name }}</span>
+                                <span class="text-sm opacity-60">×{{ item.obtained }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            <!--warps-->
+            {% if warps %}
+                <div class="flex flex-col gap-3">
+                    <h2 class="text-xl font-semibold">{% translate "Warps" %}</h2>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra table-sm">
+                            <thead>
+                                <tr>
+                                    <th>{% translate "Time" %}</th>
+                                    <th>{% translate "Item" %}</th>
+                                    <th class="text-right">{% translate "Pity" %}</th>
+                                    {% if has_50_50 %}<th class="text-right">50/50</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for w in warps %}
+                                    <tr class="{% if w.item.rarity == 3 %}opacity-50{% endif %}">
+                                        <td class="whitespace-nowrap">
+                                            {% if w.time %}
+                                                {{ w.time|date:"d.m.Y H:i" }}
+                                            {% else %}
+                                                –
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'hsr:item-detail' w.item.item_id %}"
+                                               class="link link-hover {% if w.item.rarity == 5 %}text-amber-300 font-semibold{% elif w.item.rarity == 4 %}text-purple-400{% endif %}">{{ w.item.name }}</a>
+                                        </td>
+                                        <td class="text-right">{{ w.pity|default:"–" }}</td>
+                                        {% if has_50_50 %}
+                                            <td class="text-right">
+                                                {% if w.fifty_fifty == "Won" %}
+                                                    <span class="badge badge-success badge-sm">{{ w.get_fifty_fifty_display }}</span>
+                                                {% elif w.fifty_fifty == "Lost" %}
+                                                    <span class="badge badge-error badge-sm">{{ w.get_fifty_fifty_display }}</span>
+                                                {% elif w.fifty_fifty == "Guaranteed" %}
+                                                    <span class="badge badge-info badge-sm">{{ w.get_fifty_fifty_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock content %}

@@ -278,3 +278,22 @@ def overview_banner(request, gacha_type: str):
             "gacha_type": gacha_type,
         },
     )
+
+
+def detail_banner(request, banner_id):
+    banner = get_object_or_404(
+        Banner.objects.annotate(pulls=Count("warps")).select_related("featured_item"),
+        gacha_id=banner_id,
+    )
+    return render(
+        request,
+        "hsr/banner_detail.html",
+        {
+            "name": banner.name,
+            "featured_item": banner.featured_item,
+            "item_type": ITEM_TYPES[banner.gacha_type],
+            "pulls": banner.pulls,
+            "characters": len(banner.warps.filter(item__item_type=ItemTypes.CHARACTER)),
+            "lcs": len(banner.warps.filter(item__item_type=ItemTypes.LIGHT_CONE)),
+        },
+    )

@@ -1,0 +1,33 @@
+{% extends "hsr/base.html" %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+    <h1 class="font-bold text-2xl mb-6">
+        {% if name %}
+            {{ name }}
+        {% elif featured_item %}
+            {{ featured_item.name }}
+        {% else %}
+            {% translate "Unknown Banner" %}
+        {% endif %}
+    </h1>
+    <div class="grid grid-cols-2">
+        <div class="card">
+            <figure>
+                {% if featured_item %}
+                    {% include "hsr/partials/item_portrait.html" with item=featured_item hide=True %}
+                {% else %}
+                    {% include "hsr/partials/unknown_item.html" with item_type=item_type %}
+                {% endif %}
+            </figure>
+            <div class="class-body">
+                <div class="card-actions">
+                    {% include "hsr/partials/badge_pulls.html" with pulls=pulls %}
+                    {% include "hsr/partials/badge_item_type.html" with item_type="CHARACTER" count=characters %}
+                    {% include "hsr/partials/badge_item_type.html" with item_type="LIGHT CONE" count=lcs %}
+                </div>
+            </div>
+            <div>Test</div>
+        </div>
+    </div>
+{% endblock content %}

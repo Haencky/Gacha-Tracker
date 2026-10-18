@@ -8,11 +8,16 @@
             <div>  <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a></div>
             <div>
                 <a href='{% url "hsr:item-overview" %}' class="btn btn-sm btn-ghost">
-                    <img src='{% static "hsr/InventoryIcon.png" %}' alt="" class="h-5 w-auto" />
+                    <img src='{% static "hsr/InventoryIcon.png" %}' alt="" class="h-7 w-auto" />
                     {% translate "Items" %}
                 </a>
                 <a href='{% url "hsr:banner-overview" 11 %}'
-                   class="btn btn-sm btn-ghost">{% translate "Banner" %}</a>
+                   class="btn btn-sm btn-ghost">
+                    <img src='{% static "hsr/DrawcardIcon.png" %}'
+                         alt='{% translate "Banner" %}'
+                         loading="lazy"
+                         class="h-7 w-auto" />
+                {% translate "Banner" %}</a>
             </div>
         </div>
         <div class="navbar-end">

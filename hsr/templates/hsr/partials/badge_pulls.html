@@ -1,0 +1,9 @@
+{% load static %}
+{% load i18n %}
+<div class="badge badge-outline badge-soft shrink-0">
+    <img src='{% static "hsr/102.png" %}'
+         alt="{% translate "pulls" %}"
+         loading="lazy"
+         class="size-6" />
+    {{ pulls }}
+</div>

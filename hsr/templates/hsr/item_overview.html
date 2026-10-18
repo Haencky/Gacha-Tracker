@@ -78,13 +78,7 @@
                             </div>
                         {% endif %}
                         {% if item.pulls %}
-                            <div class="badge badge-outline badge-soft shrink-0">
-                                <img src='{% static "hsr/102.png" %}'
-                                     alt="{% translate "pulls" %}"
-                                     loading="lazy"
-                                     class="size-6" />
-                                {{ item.pulls }}
-                            </div>
+                            {% include "hsr/partials/badge_pulls.html" with pulls=item.pulls %}
                         {% endif %}
                     </div>
                 </div>

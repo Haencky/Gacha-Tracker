@@ -19,20 +19,13 @@
                                  class="h-full w-full object-cover"
                                  loading="lazy">
                         {% else %}
-                            <img src='{% static "hsr/1001.png" %}'
-                                 alt=""
-                                 class="h-full w-full object-cover grayscale opacity-50"
-                                 loading="lazy" />
+                            {% include "hsr/partials/unknown_item.html" with item_type=t.item_type %}
                         {% endif %}
                     </figure>
                     <div class="card-body gap-3 p-4">
                         <div class="flex items-start justify-between gap-2">
                             <h2 class="card-title text-base">{{ t.label }}</h2>
-                            <span class="badge badge-ghost shrink-0 gap-1">
-                                <img src='{% static "hsr/102.png" %}'
-                                     alt="{% translate 'Total' %}"
-                                     class="size-[1.5em]" />
-                            {{ t.count }}</span>
+                            {% include "hsr/partials/badge_pulls.html" with pulls=t.count %}
                         </div>
                         <div>
                             <div class="flex items-baseline justify-between">

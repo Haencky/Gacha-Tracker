@@ -1,0 +1,5 @@
+{% load static %}
+<img src="{% if item_type == 'CHARACTER' %}{% static 'hsr/1001.png' %} {% elif item_type == 'LIGHT CONE' %} {% static 'hsr/21002.png' %}{% endif %}"
+     alt=""
+     class="h-full w-full object-cover grayscale opacity-50"
+     loading="lazy" />

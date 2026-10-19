@@ -359,7 +359,11 @@ def _add_candidate(catalog: ItemCatalog, q="") -> list:
     existing = set(Item.objects.values_list("item_id", flat=True))
     items = [i for i in items if i["item_id"] not in existing]
     if q:
-        items = [item for item in items if q.lower() in item["name"].lower()]
+        items = [
+            item
+            for item in items
+            if (q.lower() in item["name"].lower()) and (not [item["unreleased"]])
+        ]
 
     return sorted(items, key=lambda x: x["name"])
 

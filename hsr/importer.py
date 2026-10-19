@@ -212,6 +212,7 @@ class ItemCatalog:
                         item_type=ItemTypes.CHARACTER,
                         kind="icon",
                     ),
+                    "unreleased": c["unreleased"],
                 }
                 for _, c in self.characters.items()
             ]
@@ -226,6 +227,7 @@ class ItemCatalog:
                     "image_url": item_image_url(
                         lc["id"], item_type=ItemTypes.LIGHT_CONE, kind="icon"
                     ),
+                    "unreleased": lc["unreleased"],
                 }
                 for _, lc in self.light_cones.items()
             ]

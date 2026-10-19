@@ -1,3 +1,4 @@
+{% load static %}
 <div class="indicator {% if size != 'lg' %}w-full {% else %} {% endif %}">
     {% if item.item_type == "CHARACTER" and not hide %}
         {% if item.damage_type.icon %}
@@ -9,5 +10,9 @@
             </div>
         {% endif %}
     {% endif %}
-    <img src="{{ item.portrait.url }}" alt="{{ item.name }}" class="{% if not hide %}{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %}{% endif %} rounded-box {% if size == "lg" %}w-48 md:w-64{% else %}aspect-376/512 object-cover w-full{% endif %} {% if item.pulls == 0 %}grayscale opacity-50{% endif %}" />
+    {% if item.portrait %}
+        <img src="{{ item.portrait.url }}" alt="{{ item.name }}" class="{% if not hide %}{% if item.rarity == 5 %}ring-2 ring-amber-300{% elif item.rarity == 4 %}ring-2 ring-purple-500{% else %}ring-2 ring-blue-400{% endif %}{% endif %} rounded-box {% if size == "lg" %}w-48 md:w-64{% else %}aspect-376/512 object-cover w-full{% endif %} {% if item.pulls == 0 %}grayscale opacity-50{% endif %}" />
+    {% else %}
+        {% include "hsr/partials/unknown_item.html" with item_type=item.item_type %}
+    {% endif %}
 </div>

@@ -38,3 +38,7 @@ class ImportFileForm(forms.Form):
         if begin != b"SQLite format 3\x00":
             raise forms.ValidationError(_("Invalid db file"))
         return f
+
+
+class AddItemForm(forms.Form):
+    item_id = forms.CharField()

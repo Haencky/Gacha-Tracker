@@ -3,6 +3,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 from django.contrib import messages
+from django.core.cache import cache
 from django.db.models import Count, F, Max, Min, Q
 from django.db.models.functions import Least
 from django.http import Http404
@@ -20,7 +21,7 @@ from .exceptions import (
     FileError,
     ItemCatalogItemDoesNotExistError,
 )
-from .forms import ImportFileForm, ImportUrlForm
+from .forms import AddItemForm, ImportFileForm, ImportUrlForm
 from .importer import ApiParser, ItemCatalog, LegacyParser, RecordWriter
 from .models import Banner, Item, Path, Warp
 from .services import assign_featured_items, download_missing_images, recalculate_pity
@@ -121,7 +122,7 @@ def import_api_view(request):
             authkey, lang = form.cleaned_data["url"]
             parser = ApiParser(authkey=authkey, lang=lang)
             try:
-                writer = RecordWriter(ItemCatalog.load())
+                writer = RecordWriter(cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600))
                 result = writer.write(parser.fetch())
             except AuthkeyTimeoutError:
                 messages.error(request, _("Authkey is too old"))
@@ -156,7 +157,9 @@ def import_file(request):
                 tmp.write(chunk)
             tmp.close()
             try:
-                result = RecordWriter(ItemCatalog.load()).write(LegacyParser(tmp.name).fetch())
+                result = RecordWriter(
+                    cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
+                ).write(LegacyParser(tmp.name).fetch())
             except FileError:
                 messages.error(request, _("File could not be read"))
             else:
@@ -345,8 +348,54 @@ def detail_banner(request, banner_id):
             "warps": warps,
             "items": items,
             "five_pities": [w.pity for w in reversed(warps) if w.item.rarity == 5],
-            "distribution": _distribution(
-                [(5, banner.five), (4, banner.four), (3, three)], total
-            ),
+            "distribution": _distribution([(5, banner.five), (4, banner.four), (3, three)], total),
         },
     )
+
+
+def _add_candidate(catalog: ItemCatalog, q="") -> list:
+    items = catalog.all()
+    existing = set(Item.objects.values_list("item_id", flat=True))
+    items = [i for i in items if i["item_id"] not in existing]
+    if q:
+        items = [item for item in items if q.lower() in item["name"].lower()]
+
+    return sorted(items, key=lambda x: x["name"])
+
+
+def add_item(request):
+    """
+    Adds item manually
+    """
+    catalog = cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
+    items = _add_candidate(catalog)
+    form = AddItemForm()
+
+    if request.method == "POST":
+        form = AddItemForm(request.POST)
+        if form.is_valid():
+            item_id = form.cleaned_data["item_id"]
+
+            if Item.objects.filter(item_id=item_id).exists():
+                messages.warning(request, _("Item already exists"))
+            else:
+                try:
+                    entry = catalog.get(item_id)
+                except ItemCatalogItemDoesNotExistError:
+                    messages.error(request, _("Item does not exist"))
+                    return redirect("hsr:item-add")
+                Item.objects.create_from_catalog(entry, entry.eng_name)
+                download_missing_images()
+
+                return redirect("hsr:item-detail", item_id=item_id)
+
+    return render(request, "hsr/item_add.html", {"items": items, "form": form})
+
+
+def add_search_item(request):
+    catalog = cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
+    q = request.GET.get("q", "")
+
+    items = _add_candidate(catalog, q)
+
+    return render(request, "hsr/partials/item_add_candidate.html", {"items": items})

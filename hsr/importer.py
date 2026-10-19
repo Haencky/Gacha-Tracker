@@ -88,21 +88,24 @@ class CatalogEntry:
         item_id(str): item id
         damage_type(str): element of character
         path(str): name of path
-        guide(str):
+        guide(str): url to prydwen guide
+        rarity(str): rarity
     """
 
     def __init__(
         self,
         eng_name: str,
         item_id: str,
-        path: str,
         item_type: str,
+        rarity: str,
+        path: str | None = None,
         damage_type: str | None = None,
         guide: str = "",
     ):
         self.eng_name = eng_name
         self.item_id = item_id
         self.damage_type = damage_type
+        self.rarity = rarity
         self.path = path
         self.item_type = item_type
         self.guide = guide
@@ -164,6 +167,7 @@ class ItemCatalog:
                 guide=PRYDWEN_GUIDE.format(
                     slug=PRYDWEN_SPECIAL_NAMES.get(item_id, slugify(raw["name"]))
                 ),
+                rarity=raw["rarity"],
             )
         elif raw := self.light_cones.get(item_id):
             return CatalogEntry(
@@ -171,11 +175,44 @@ class ItemCatalog:
                 eng_name=raw["name"],
                 path=raw["path"],
                 item_type=ItemTypes.LIGHT_CONE,
+                rarity=raw["rarity"],
             )
         else:
             raise ItemCatalogItemDoesNotExistError(
                 f"Item with item_id {item_id} does not exist in source"
             )
+
+    def all(self) -> list[CatalogEntry]:
+        """
+        Returns catalog entries for all existing items
+
+        Returns:
+            items(list): list of all items as CatalogEntry
+        """
+        ret = []
+        ret.extend(
+            [
+                {
+                    "name": c["name"],
+                    "item_id": c["id"],
+                    "item_type": ItemTypes.CHARACTER,
+                    "rarity": c["rarity"],
+                }
+                for _, c in self.characters.items()
+            ]
+        )
+        ret.extend(
+            [
+                {
+                    "name": lc["name"],
+                    "item_id": lc["id"],
+                    "item_type": ItemTypes.LIGHT_CONE,
+                    "rarity": lc["rarity"],
+                }
+                for _, lc in self.light_cones.items()
+            ]
+        )
+        return ret
 
 
 class WarpRecord(AbstractPullRecord):
@@ -451,9 +488,7 @@ class RecordWriter(AbstractPullWriter):
             return item
         else:
             entry = self.catalog.get(warp_record.item_id)
-            new_item = Item.objects.create_from_catalog(
-                entry=entry, name=warp_record.item_name, rarity=warp_record.rarity
-            )
+            new_item = Item.objects.create_from_catalog(entry=entry, name=warp_record.item_name)
             self.items[new_item.item_id] = new_item
             return new_item
 

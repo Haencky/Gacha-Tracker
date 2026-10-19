@@ -36,7 +36,7 @@ class ItemManager(models.Manager):
     Custom manager to add functionalities for import
     """
 
-    def create_from_catalog(self, entry, name, rarity):
+    def create_from_catalog(self, entry, name):
         """
         Takes an catalog entry and creates specified item and all needed objects
         """
@@ -47,7 +47,7 @@ class ItemManager(models.Manager):
             damage_type = None
         return self.create(
             name=name,
-            rarity=rarity,
+            rarity=entry.rarity,
             eng_name=entry.eng_name,
             path=path,
             damage_type=damage_type,

@@ -13,4 +13,6 @@ urlpatterns = [
     path("items/", views.overview_item, name="item-overview"),
     path("banner/overview/<str:gacha_type>/", views.overview_banner, name="banner-overview"),
     path("banner/detail/<str:banner_id>/", views.detail_banner, name="banner-detail"),
+    path("items/add/", views.add_item, name="item-add"),
+    path("items/add/search/", views.add_search_item, name="item-add-search"),
 ]

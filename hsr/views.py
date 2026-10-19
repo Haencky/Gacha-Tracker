@@ -34,7 +34,6 @@ def _finish_import(request, result):
         request,
         _(f"Imported {result.created}, New items: {result.new_items}"),
     )
-
     if result.unknown_items:
         messages.warning(request, f"Unknown items: {result.unknown_items}")
     assignment = assign_featured_items()
@@ -43,7 +42,9 @@ def _finish_import(request, result):
         messages.success(request, _(f"Successfully assigned {assignment.success} items"))
     if assignment.fail:
         messages.error(request, _(f"Failed to assign {assignment.fail} items"))
-    donwload = download_missing_images()
+    donwload = download_missing_images(
+        catalog=cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
+    )
     if s_icons := donwload.item_icons.success:
         messages.success(request, _(f"Downloaded {s_icons} icons"))
     if f_icons := donwload.item_icons.fail:
@@ -385,7 +386,7 @@ def add_item(request):
                     messages.error(request, _("Item does not exist"))
                     return redirect("hsr:item-add")
                 Item.objects.create_from_catalog(entry, entry.eng_name)
-                download_missing_images()
+                download_missing_images(catalog)
 
                 return redirect("hsr:item-detail", item_id=item_id)
 

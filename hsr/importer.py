@@ -20,6 +20,7 @@ from .exceptions import (
     LegacyFileError,
 )
 from .models import Banner, GachaTypes, Item, ItemTypes, Warp
+from .services import item_image_url
 
 FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
 PRYDWEN_GUIDE = "https://www.prydwen.gg/star-rail/characters/{slug}"
@@ -116,14 +117,16 @@ class ItemCatalog:
     Support class for holding all available items
     """
 
-    def __init__(self, characters: dict, light_cones: dict):
+    def __init__(self, characters: dict, light_cones: dict, image_ids: dict):
         """
         Args:
             characters(dict): dictionary of fribbels characters
             light_cones(dict): dictionary of fribbels light cones
+            image_ids(dict): dictionary of items with nova flare
         """
         self.characters = characters
         self.light_cones = light_cones
+        self.image_ids = image_ids
 
     @classmethod
     def load(cls):
@@ -141,11 +144,18 @@ class ItemCatalog:
 
         try:
             chars = data["characters"]
+            image_ids = {key.removesuffix("b1"): key for key in chars if key.endswith("b1")}
             characters = {key: value for key, value in chars.items() if key.isdigit()}
         except KeyError as e:
             raise ItemCatalogUnknownTypeError("characters is not a valid key in items") from e
 
-        return cls(light_cones=light_cones, characters=characters)
+        return cls(light_cones=light_cones, characters=characters, image_ids=image_ids)
+
+    def image_id(self, item_id: str) -> str:
+        """
+        Returns the correct image id
+        """
+        return self.image_ids.get(item_id, item_id)
 
     def get(self, item_id: str) -> CatalogEntry:
         """
@@ -197,6 +207,11 @@ class ItemCatalog:
                     "item_id": c["id"],
                     "item_type": ItemTypes.CHARACTER,
                     "rarity": c["rarity"],
+                    "image_url": item_image_url(
+                        self.image_ids.get(c["id"], c["id"]),
+                        item_type=ItemTypes.CHARACTER,
+                        kind="icon",
+                    ),
                 }
                 for _, c in self.characters.items()
             ]
@@ -208,6 +223,9 @@ class ItemCatalog:
                     "item_id": lc["id"],
                     "item_type": ItemTypes.LIGHT_CONE,
                     "rarity": lc["rarity"],
+                    "image_url": item_image_url(
+                        lc["id"], item_type=ItemTypes.LIGHT_CONE, kind="icon"
+                    ),
                 }
                 for _, lc in self.light_cones.items()
             ]

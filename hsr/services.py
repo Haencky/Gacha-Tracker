@@ -11,26 +11,25 @@ from .choices import FiftyFifty, GachaTypes, ItemTypes
 from .constants import CELESTIAL_INVITES, FEATURED_TYPES
 from .models import Banner, DamageType, Item, Path, Warp
 
-FRIBBELS_ELEMENTS = {
-    "Lightning": "Thunder",
-}  # mapping for element names to star rail res image names
-
-IMAGE_URL = "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/"
-# icons for paths are icon/path/{Pathname}.png (capital)
-# icons for elements are icon/element/{Element}.png (capital)
-# icons for characters are icon/character/{Item_ID}.png
-# images for characters are image/character_preview/{Item_ID}.png
-# images for light cones are image/light_cone_portrait/{Item_ID}.png
-# full arts for characters are image/character_portrait/{Item_ID}.png
+IMAGE_URL = (
+    "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/public/assets/"
+)
+# icons for paths are icon/path/{Pathname}.webp (capital)
+# icons for elements are icon/element/{Element}.webp (capital)
+# icons for characters are icon/avatar/{Item_ID}.webp
+# images for characters are image/character_preview/{Item_ID}.webp
+# images for light cones are image/light_cone_portrait/{Item_ID}.webp
+# full arts for characters are image/character_portrait/{Item_ID}.webp
 
 ITEM_IMAGE_PATHS = {
-    (ItemTypes.CHARACTER, "icon"): "icon/character/{item_id}.png",
-    (ItemTypes.CHARACTER, "portrait"): "image/character_preview/{item_id}.png",
-    (ItemTypes.CHARACTER, "fullart"): "image/character_portrait/{item_id}.png",
-    (ItemTypes.LIGHT_CONE, "portrait"): "image/light_cone_portrait/{item_id}.png",
+    (ItemTypes.CHARACTER, "icon"): "icon/avatar/{item_id}.webp",
+    (ItemTypes.CHARACTER, "portrait"): "image/character_preview/{item_id}.webp",
+    (ItemTypes.CHARACTER, "fullart"): "image/character_portrait/{item_id}.webp",
+    (ItemTypes.LIGHT_CONE, "portrait"): "image/light_cone_portrait/{item_id}.webp",
+    (ItemTypes.LIGHT_CONE, "icon"): "icon/light_cone/{item_id}.webp",
 }
 
-ATTRIBUTE_IMAGE_PATHS = {Path: "icon/path/{name}.png", DamageType: "icon/element/{name}.png"}
+ATTRIBUTE_IMAGE_PATHS = {Path: "icon/path/{name}.webp", DamageType: "icon/element/{name}.png"}
 
 
 @dataclass
@@ -72,11 +71,10 @@ def attribute_image_url(obj: AbstractAttribute):
     Args:
        obj(AbstractAttribute): either Path or DamageType
     """
-    name = obj.name if isinstance(obj, Path) else FRIBBELS_ELEMENTS.get(obj.name, obj.name)
-    return IMAGE_URL + ATTRIBUTE_IMAGE_PATHS[type(obj)].format(name=name)
+    return IMAGE_URL + ATTRIBUTE_IMAGE_PATHS[type(obj)].format(name=obj.name)
 
 
-def item_image_url(item: Item, kind: str):
+def item_image_url(item_id: str, item_type: ItemTypes, kind: str):
     """
     Builds image url
 
@@ -84,8 +82,8 @@ def item_image_url(item: Item, kind: str):
         item(Item): item with missing images
         kind(str): kind of image (e.g. icon or portrait)
     """
-    image_path = ITEM_IMAGE_PATHS[(item.item_type, kind)]
-    return IMAGE_URL + image_path.format(item_id=item.item_id)
+    image_path = ITEM_IMAGE_PATHS[(item_type, kind)]
+    return IMAGE_URL + image_path.format(item_id=item_id)
 
 
 def _fetch_attribute_icon(attribute: type[AbstractAttribute]) -> ServiceCount:
@@ -112,7 +110,7 @@ def _fetch_attribute_icon(attribute: type[AbstractAttribute]) -> ServiceCount:
     return ServiceCount(success=(len(entries) - failed), fail=failed)
 
 
-def _fetch_item_images(kind: str) -> ServiceCount:
+def _fetch_item_images(catalog, kind: str) -> ServiceCount:
     """
     Fetches missing images for items
 
@@ -129,7 +127,7 @@ def _fetch_item_images(kind: str) -> ServiceCount:
     failed = 0
 
     for i in items:
-        url = item_image_url(i, kind)
+        url = item_image_url(item_id=catalog.image_id(i.item_id), item_type=i.item_type, kind=kind)
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
@@ -142,7 +140,7 @@ def _fetch_item_images(kind: str) -> ServiceCount:
     return ServiceCount(success=len(items) - failed, fail=failed)
 
 
-def download_missing_images() -> ImageDownloadResult:
+def download_missing_images(catalog) -> ImageDownloadResult:
     """
     Downloads all missing image files
 
@@ -150,8 +148,8 @@ def download_missing_images() -> ImageDownloadResult:
         result(ImageDownloadResult): custom object containing count for success and fails
     """
     return ImageDownloadResult(
-        item_icons=_fetch_item_images("icon"),
-        item_portraits=_fetch_item_images("portrait"),
+        item_icons=_fetch_item_images(catalog, "icon"),
+        item_portraits=_fetch_item_images(catalog, "portrait"),
         path=_fetch_attribute_icon(Path),
         dtype=_fetch_attribute_icon(DamageType),
     )

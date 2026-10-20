@@ -15,4 +15,5 @@ urlpatterns = [
     path("banner/detail/<str:banner_id>/", views.detail_banner, name="banner-detail"),
     path("items/add/", views.add_item, name="item-add"),
     path("items/add/search/", views.add_search_item, name="item-add-search"),
+    path("banner/edit/<pk>", views.EditBanner.as_view(), name="banner-edit"),
 ]

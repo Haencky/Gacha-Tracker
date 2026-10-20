@@ -47,6 +47,12 @@
               class="htmx-indicator loading loading-spinner loading-md fixed bottom-4 right-4"
               role="status"
               aria-label="{% translate 'Loading' %}"></span>
+        <dialog id="modal" class="modal">
+            <div id="modal-content" class="modal-box"></div>
+            <form method="dialog" class="modal-backdrop">
+                <button type="">{% translate "Close" %}</button>
+            </form>
+        </dialog>
         {% block scripts %}
         {% endblock scripts %}
     </body>

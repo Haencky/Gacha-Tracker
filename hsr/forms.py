@@ -4,6 +4,8 @@ from django import forms
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext_lazy as _
 
+from .models import Banner
+
 
 class ImportUrlForm(forms.Form):
     url = forms.CharField()
@@ -42,3 +44,14 @@ class ImportFileForm(forms.Form):
 
 class AddItemForm(forms.Form):
     item_id = forms.CharField()
+
+
+class BannerEditForm(forms.ModelForm):
+    class Meta:
+        model = Banner
+        fields = ["name", "featured_item"]
+        labels = {"featured_item": _("Featured item")}
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input w-full"}),
+            "featured_item": forms.Select(attrs={"class": "select w-full"}),
+        }

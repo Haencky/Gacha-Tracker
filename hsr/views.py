@@ -6,14 +6,15 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.db.models import Count, F, Max, Min, Q
 from django.db.models.functions import Least
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
+from django.views import generic
 
 from core.services.stats import Stats, get_stats
 
 from .choices import FiftyFifty, GachaTypes, ItemTypes
-from .constants import FEATURED_TYPES, HARD_PITYS, ITEM_TYPES
+from .constants import CELESTIAL_INVITES, FEATURED_TYPES, HARD_PITYS, ITEM_TYPES
 from .exceptions import (
     ApiError,
     AuthkeyError,
@@ -21,7 +22,7 @@ from .exceptions import (
     FileError,
     ItemCatalogItemDoesNotExistError,
 )
-from .forms import AddItemForm, ImportFileForm, ImportUrlForm
+from .forms import AddItemForm, BannerEditForm, ImportFileForm, ImportUrlForm
 from .importer import ApiParser, ItemCatalog, LegacyParser, RecordWriter
 from .models import Banner, Item, Path, Warp
 from .services import assign_featured_items, download_missing_images, recalculate_pity
@@ -360,9 +361,7 @@ def _add_candidate(catalog: ItemCatalog, q="") -> list:
     items = [i for i in items if i["item_id"] not in existing]
     if q:
         items = [
-            item
-            for item in items
-            if (q.lower() in item["name"].lower()) and (not [item["unreleased"]])
+            item for item in items if q.lower() in item["name"].lower() and not [item["unreleased"]]
         ]
 
     return sorted(items, key=lambda x: x["name"])
@@ -404,3 +403,23 @@ def add_search_item(request):
     items = _add_candidate(catalog, q)
 
     return render(request, "hsr/partials/item_add_candidate.html", {"items": items})
+
+
+class EditBanner(generic.edit.UpdateView):
+    model = Banner
+    form_class = BannerEditForm
+    template_name = "hsr/partials/banner_edit_view.html"
+
+    def form_valid(self, form):
+        self.object = form.save()
+        recalculate_pity()
+        response = HttpResponse()
+        response["HX-Refresh"] = "true"
+        return response
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=form_class)
+        form.fields["featured_item"].queryset = Item.objects.filter(
+            rarity=5, item_type=ITEM_TYPES[self.object.gacha_type]
+        ).exclude(item_id__in=CELESTIAL_INVITES)
+        return form

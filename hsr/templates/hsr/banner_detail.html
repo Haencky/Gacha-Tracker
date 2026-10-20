@@ -25,15 +25,23 @@
         <div class="flex flex-col gap-6 min-w-0">
             <!--top area-->
             <div>
-                <h1 class="text-3xl font-bold">
-                    {% if banner.name %}
-                        {{ banner.name }}
-                    {% elif banner.featured_item %}
-                        {{ banner.featured_item.name }}
-                    {% else %}
-                        {% translate "Unknown Banner" %}
-                    {% endif %}
-                </h1>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-3xl font-bold">
+                        {% if banner.name %}
+                            {{ banner.name }}
+                        {% elif banner.featured_item %}
+                            {{ banner.featured_item.name }}
+                        {% else %}
+                            {% translate "Unknown Banner" %}
+                        {% endif %}
+                    </h1>
+                    <button class="btn"
+                            type=""
+                            hx-get="{% url 'hsr:banner-edit' banner.gacha_id %}"
+                            hx-target="#modal-content"
+                            hx-swap="outerHTML"
+                            hx-on::after-request="document.getElementById('modal').showModal()">{% translate "Edit" %}</button>
+                </div>
                 <p class="text-lg opacity-60">
                     <span class="badge badge-outline">{{ banner.get_gacha_type_display }}</span>
                     {% if banner.first_time %}
@@ -83,18 +91,11 @@
                 <!--rarity distribution-->
                 {% if banner.pulls %}
                     {# svg attributes instead of inline styles, stringformat keeps a dot as decimal separator #}
-                    <svg class="block h-2 w-full overflow-hidden rounded-full bg-base-300"
-                         viewBox="0 0 100 1"
-                         preserveAspectRatio="none"
-                         role="img"
-                         aria-label="{% for s in distribution %}{{ s.rarity }}★ {{ s.count }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                    <svg class="block h-2 w-full overflow-hidden rounded-full bg-base-300" viewBox="0 0 100 1" preserveAspectRatio="none" role="img" aria-label="{% for s in distribution %}{{ s.rarity }}★ {{ s.count }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                         {% for s in distribution %}
                             {% if s.count %}
-                                <rect x="{{ s.x|stringformat:'.2f' }}"
-                                      width="{{ s.width|stringformat:'.2f' }}"
-                                      height="1"
-                                      class="{% if s.rarity == 5 %}fill-amber-300{% elif s.rarity == 4 %}fill-purple-500{% else %}fill-blue-400{% endif %}">
-                                    <title>{{ s.rarity }}★: {{ s.count }}</title>
+                                <rect x="{{ s.x|stringformat:'.2f' }}" width="{{ s.width|stringformat:'.2f' }}" height="1" class="{% if s.rarity == 5 %}fill-amber-300{% elif s.rarity == 4 %}fill-purple-500{% else %}fill-blue-400{% endif %}">
+                                <title>{{ s.rarity }}★: {{ s.count }}</title>
                                 </rect>
                             {% endif %}
                         {% endfor %}

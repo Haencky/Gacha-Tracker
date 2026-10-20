@@ -15,7 +15,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-6">
         {% for b in banner %}
             <a href='{% url "hsr:banner-detail" b.gacha_id %}'
-               class="card bg-base-100 shadow-sm ring-2 {% if b.featured_item %} ring-success {% else %} ring-error {% endif %}">
+               class="card bg-base-100 shadow-sm ring-2 {% if b.featured_pulls %} ring-success {% else %} ring-error {% endif %}">
                 <figure>
                     {% if b.featured_item.portrait %}
                         {% include "hsr/partials/item_portrait.html" with item=b.featured_item hide=True only %}

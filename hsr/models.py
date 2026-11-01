@@ -191,6 +191,13 @@ class Warp(AbstractPull):
         help_text=_("Info about fifty fifty won or loss"),
     )
 
+    featured_pity = models.IntegerField(
+        verbose_name=_("Featured pity"),
+        help_text=_("Pity required for featured item"),
+        null=True,
+        blank=True,
+    )
+
     @property
     def is_lost(self):
         return self.fifty_fifty == FiftyFifty.LOST

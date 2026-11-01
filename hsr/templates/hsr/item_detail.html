@@ -46,6 +46,14 @@
                             </div>
                             <div class="stat-value">{% if item.item_type == "CHARACTER" %}E{{ eidolon }} {% else %}S{{ lvl }} {% endif %}</div>
                         </div>
+                        <div class="stat bg-base 200 shadow">
+                            <div class="stat-title">
+                                {% translate "Used pulls" %}
+                            </div>
+                            <div class="stat-value">
+                                {{ item.featured_pulls_total }}
+                            </div>
+                        </div>
                     </div>
                 {% else %}
                     <div>{% translate "Item not yet obtained" %}</div>

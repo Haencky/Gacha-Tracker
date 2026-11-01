@@ -4,7 +4,7 @@ from tempfile import NamedTemporaryFile
 
 from django.contrib import messages
 from django.core.cache import cache
-from django.db.models import Count, F, Max, Min, Q
+from django.db.models import Count, F, Max, Min, Q, Sum
 from django.db.models.functions import Least
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -200,7 +200,9 @@ def detail_item(request, item_id: str):
     """
 
     item = get_object_or_404(
-        Item.objects.annotate(pulls=Count("warps")).select_related("damage_type", "path"),
+        Item.objects.annotate(pulls=Count("warps"))
+        .annotate(featured_pulls_total=Sum(F("warps__featured_pity")))
+        .select_related("damage_type", "path"),
         item_id=item_id,
     )
     warps = item.warps.order_by("-id")

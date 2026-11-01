@@ -29,7 +29,7 @@ ITEM_IMAGE_PATHS = {
     (ItemTypes.LIGHT_CONE, "icon"): "icon/light_cone/{item_id}.webp",
 }
 
-ATTRIBUTE_IMAGE_PATHS = {Path: "icon/path/{name}.webp", DamageType: "icon/element/{name}.png"}
+ATTRIBUTE_IMAGE_PATHS = {Path: "icon/path/{name}.webp", DamageType: "icon/element/{name}.webp"}
 
 
 @dataclass
@@ -184,13 +184,16 @@ def recalculate_pity() -> None:
     updated = []
     for g in GachaTypes:
         pity = 0
+        featured_pity = 0
         guaranteed = False
         warps = Warp.objects.select_related("item", "banner__featured_item").filter(gacha_type=g)
         has_50_50 = g in FEATURED_TYPES
         for w in warps:
             pity += 1
+            featured_pity += 1
             w.pity = pity
             w.fifty_fifty = ""
+            w.featured_pity = None
             if w.is_highest_rank:
                 if has_50_50:
                     if w.banner.featured_item is not None:
@@ -202,12 +205,19 @@ def recalculate_pity() -> None:
                             w.fifty_fifty = FiftyFifty.LOST
                         else:
                             w.fifty_fifty = FiftyFifty.WON
+                            w.featured_pity = featured_pity
+                            featured_pity = 0
                     else:
                         w.fifty_fifty = FiftyFifty.GUARANTEED
+                        w.featured_pity = featured_pity
+                        featured_pity = 0
                     guaranteed = lost
+                else:
+                    w.featured_pity = pity
+                    featured_pity = 0
                 pity = 0
 
             updated.append(w)
 
     with transaction.atomic():
-        Warp.objects.bulk_update(updated, ["pity", "fifty_fifty"], batch_size=500)
+        Warp.objects.bulk_update(updated, ["pity", "fifty_fifty", "featured_pity"], batch_size=500)

@@ -25,7 +25,7 @@
                 </figure>
                 <div class="card-body p-3 gap-2 flex-1">
                     <div class="card-actions justify-between mt-auto inline-flex">
-                        <div class="badge {% if b.lost %}badge-error {% else %} badge-success {% endif %}">
+                        <div class="badge {% if not b.featured_pulls and not b.lost %} badge-info {% elif not b.featured_pulls %}badge-error {% elif b.featured_pulls and b.lost %} badge-warning{% else %} badge-success {% endif %}">
                             {{ b.featured_pulls }}/{{ b.featured_pulls|add:b.lost }}
                         </div>
                         {% include "hsr/partials/badge_pulls.html" with pulls=b.pulls %}

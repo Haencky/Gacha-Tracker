@@ -3,12 +3,12 @@
 {% block title %}{% translate "Import" %} · Honkai: Star Rail{% endblock title %}
 {% block content %}
     <div class="mx-auto max-w-2xl">
-        <h1 class="card-title text-2xl">{% translate "Import warps" %}</h1>
+        <h1 class="card-title text-2xl">{% translate "Import Warps" %}</h1>
         <div class="tabs tabs-border">
             <input type="radio"
-                   name="my_tabs_2"
+                   name="import_tabs"
                    class="tab"
-                   aria-label="URL"
+                   aria-label="{% translate "URL" %}"
                    {% if active_tab == "api" %}checked{% endif %} />
             <div class="tab-content border-base-300 bg-base-100 p-10">
                 <div class="card bg-base-100 shadow-sm">
@@ -16,10 +16,40 @@
                         <div>
                             <p class="opacity-70">{% translate "Import your warp history directly from the HoYoverse API." %}</p>
                         </div>
-                        <ol class="list-decimal space-y-1 pl-5 text-sm opacity-80">
-                            <li>{% translate "Open the warp history in game." %}</li>
-                            <li>{% translate "Copy the warp history URL from the game cache." %}</li>
-                            <li>{% translate "Paste it below and start the import." %}</li>
+                        <ol class="list-decimal space-y-1 pl-5 text-sm">
+                            <li class="opacity-80">{% translate "Open the warp history in game." %}</li>
+                            <li>
+                                {% translate "Run this command in PowerShell, it copies the URL to your Clipboard" %}
+                                {# wrapper is the positioning context, mockup-code scrolls and would move/clip the button #}
+                                <div class="relative mt-2">
+                                    <div class="mockup-code w-full pr-12 text-xs">
+                                        <pre data-prefix="PS>"><code class="select-all" id="warp-command">[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; Invoke-Expression (New-Object Net.WebClient).DownloadString("https://gist.githubusercontent.com/Star-Rail-Station/2512df54c4f35d399cc9abbde665e8f0/raw/get_warp_link_os.ps1?cachebust=srs")</code></pre>
+                                    </div>
+                                    <div class="tooltip tooltip-left absolute top-2 right-2"
+                                         data-tip="{% translate 'Copy' %}">
+                                        <button type="button"
+                                                class="btn btn-ghost btn-xs btn-square"
+                                                aria-label="{% translate 'Copy command' %}"
+                                                data-copy="#warp-command"
+                                                data-copied="{% translate 'Copied!' %}"
+                                                data-copy-manual="{% translate 'Press Ctrl+C to copy' %}">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 viewBox="0 0 24 24"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 stroke-width="2"
+                                                 stroke-linecap="round"
+                                                 stroke-linejoin="round"
+                                                 class="size-4"
+                                                 aria-hidden="true">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="opacity-80">{% translate "Paste it below and start the import." %}</li>
                         </ol>
                         <form method="post"
                               action="{% url 'hsr:import-api' %}"
@@ -38,7 +68,7 @@
                                           autocomplete="off"
                                           spellcheck="false"
                                           placeholder="https://public-operation-hkrpg-sg.hoyoverse.com/common/gacha_record/api/getGachaLog?authkey=…"
-                                          class="textarea w-full font-mono text-xs break-all {% if form.url.errors %}textarea-error{% endif %}">{{ form.url.value|default:"" }}</textarea>
+                                          class="textarea w-full font-mono text-xs break-all {% if url_form.url.errors %}textarea-error{% endif %}">{{ url_form.url.value|default:"" }}</textarea>
                                 {% for error in url_form.url.errors %}
                                     <p class="label text-error">{{ error }}</p>
                                 {% empty %}
@@ -54,9 +84,9 @@
                 </div>
             </div>
             <input type="radio"
-                   name="my_tabs_2"
+                   name="import_tabs"
                    class="tab"
-                   aria-label="File"
+                   aria-label="{% translate "File" %}"
                    {% if active_tab == "file" %}checked{% endif %} />
             <div class="tab-content border-base-300 bg-base-100 p-10">
                 <form method="post"
@@ -73,7 +103,7 @@
                                accept=".sqlite3,.sqlite,.db"
                                required
                                class="file-input w-full {% if file_form.file.errors %}file-input-error{% endif %}">
-                        {% for error in file_form.url.errors %}
+                        {% for error in file_form.file.errors %}
                             <p class="label text-error">{{ error }}</p>
                         {% empty %}
                         {% endfor %}

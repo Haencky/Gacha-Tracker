@@ -421,7 +421,9 @@ class EditBanner(generic.edit.UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class=form_class)
-        form.fields["featured_item"].queryset = Item.objects.filter(
-            rarity=5, item_type=ITEM_TYPES[self.object.gacha_type]
-        ).exclude(item_id__in=CELESTIAL_INVITES)
+        form.fields["featured_item"].queryset = (
+            Item.objects.filter(rarity=5, item_type=ITEM_TYPES[self.object.gacha_type])
+            .exclude(item_id__in=CELESTIAL_INVITES)
+            .order_by("name")
+        )
         return form

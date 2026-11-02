@@ -8,8 +8,8 @@
                    class="flex items-center gap-3">
                     <div class="avatar shrink-0">
                         <div class="mask mask-squircle size-8 {% if item.rarity == 5 %}bg-warning/30{% elif item.rarity == 4 %}bg-secondary/30{% else %}bg-info/30{% endif %}">
-                            {% if item.item_type == "LIGHT CONE" and item.portrait %}
-                                <img src="{{ item.portrait.url }}" alt="" loading="lazy" />
+                            {% if item.item_type == "LIGHT CONE" and item.icon %}
+                                <img src="{{ item.icon.url }}" alt="" loading="lazy" />
                             {% elif item.icon %}
                                 <img src="{{ item.icon.url }}" alt="" loading="lazy" />
                             {% endif %}

@@ -9,8 +9,6 @@ class AbstractPullRecord(ABC):
     Attributes:
         time(str): timestamp
         id(str): pull identifier
-        uid(str): user identifier
-        gacha_type(str): gacha type identifer
     """
 
     time: str

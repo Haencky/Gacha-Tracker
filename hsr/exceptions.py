@@ -73,3 +73,22 @@ class LegacyFileError(FileError):
 
     def __init__(self, message, type="legacy"):
         super().__init__(message, "legacy")
+
+
+class UIDError(Exception):
+    """
+    Error if uid cant be pased
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class PetError(Exception):
+    """
+    Base class for pet api
+    """
+
+    def __init__(self, message, retcode: int = None):
+        self.retcode = retcode
+        super().__init__(message)

@@ -18,8 +18,10 @@ from .exceptions import (
     ItemCatalogItemDoesNotExistError,
     ItemCatalogUnknownTypeError,
     LegacyFileError,
+    PetError,
+    UIDError,
 )
-from .models import Banner, GachaTypes, Item, ItemTypes, Warp
+from .models import Banner, GachaTypes, Item, ItemTypes, Pet, PetPool, PetType, Warp
 from .services import item_image_url
 
 FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
@@ -43,13 +45,13 @@ PRYDWEN_SPECIAL_NAMES = {
     "8009": "trailblazer-elation",
     "8010": "trailblazer-elation",
 }
-API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=5000"
+API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global"
 
 PET_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getBlindBoxLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global"
 # authkey = {authkey}
 # lang = {lang}
 
-COLLAB_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getLdGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global&size=5000"
+COLLAB_API_URL = "https://public-operation-hkrpg-sg.hoyoverse.com/common/hkrpg_gacha_record/api/getLdGachaLog?authkey_ver=1&sign_type=2&game_biz=hkrpg_global"
 # authkey={authkey}
 # lang={lang}
 # gacha_type={gacha_type}
@@ -75,6 +77,34 @@ LEGACY_QUERY = """
 """
 STANDARD_BANNER_ID = "1001"
 PULL_ID_LENGTH = 19
+
+
+# SUPPORT FUNCTIONS
+def build_api_url(gacha_type: str, authkey: str, lang: str, size: int):
+    """
+    Builds the url
+
+    Args:
+        gacha_type(str): gacha type
+        authkey(str): authkey
+        lang(str): language code
+    """
+    url = GACHA_TYPE_URLS.get(gacha_type)
+    if url is None:
+        raise GachaTypeError(f"Unknown gacha type: {gacha_type}")
+    else:
+        parsed = urlparse(url)
+
+    query_dict = parse_qs(parsed.query)
+
+    query_dict["gacha_type"] = [gacha_type]
+    query_dict["authkey"] = [authkey]
+    query_dict["lang"] = [lang]
+    query_dict["size"] = [size]
+    new_query = urlencode(query_dict, doseq=True)
+    url = urlunparse(parsed._replace(query=new_query))
+
+    return url
 
 
 # SUPPORT CLASSES #
@@ -295,6 +325,73 @@ class WarpRecord(AbstractPullRecord):
         return t.replace(tzinfo=tz)
 
 
+class PetRecord(AbstractPullRecord):
+    """
+    Custom object for pet entries
+
+    Attributes:
+        id(str): identifier for pet pull
+        pool_id(str): pool identifier
+        item_id(str): item id
+        item_name(str): pet name
+        pet_id(str): pet id (most likely identical to item_id)
+        chroma_appearance_id(str): "shiny" value
+        pet_type(str): series identifier (i guess), based on type name
+        blind_box_sub_rarity(str): rarity (based on type and chroma experience)
+        type_name(str): pet type name
+        time(str): timestamp
+        uid(str): account identifier
+        time_zone_offset(int): offset to utc
+    """
+
+    def __init__(
+        self,
+        id: str,
+        pool_id: str,
+        item_id: str,
+        item_name,
+        pet_id: str,
+        chroma_appearance_id: str,
+        pet_type: str,
+        blind_box_sub_rarity: str,
+        type_name: str,
+        time: str,
+        uid: str,
+        time_zone_offset: int,
+    ):
+        self.id = id
+        self.pool_id = pool_id
+        self.item_id = item_id
+        self.item_name = item_name
+        self.pet_id = pet_id
+        self.chroma_appearance_id = chroma_appearance_id
+        self.pet_type = pet_type
+        self.blind_box_sub_rarity = blind_box_sub_rarity
+        self.type_name = type_name
+        self.time = time
+        self.uid = uid
+        self.time_zone_offset = time_zone_offset
+
+    def __eq__(self, other):
+        if not isinstance(other, PetRecord):
+            return False
+        return self.id == other.id
+
+    def __repr__(self):
+        return f"{self.id} - {self.item_name} - {self.time}"
+
+    def __hash__(self):
+        return int(self.id)
+
+    @property
+    def aware_time(self):
+        if not self.time:
+            return None
+        t = datetime.strptime(self.time, "%Y-%m-%d %H:%M:%S")
+        tz = timezone(timedelta(hours=self.time_zone_offset))
+        return t.replace(tzinfo=tz)
+
+
 # PARSER #
 class ApiParser(AbstractParser):
     def __init__(self, authkey: str, lang: str):
@@ -335,19 +432,8 @@ class ApiParser(AbstractParser):
             AuthkeyError
             GachaTypeError
         """
-        url = GACHA_TYPE_URLS.get(gacha_type)
-        if url is None:
-            raise GachaTypeError(f"Unknown gacha type: {gacha_type}")
-        else:
-            parsed = urlparse(url)
 
-        query_dict = parse_qs(parsed.query)
-
-        query_dict["gacha_type"] = [gacha_type]
-        query_dict["authkey"] = [self.authkey]
-        query_dict["lang"] = [self.lang]
-        new_query = urlencode(query_dict, doseq=True)
-        url = urlunparse(parsed._replace(query=new_query))
+        url = build_api_url(gacha_type=gacha_type, authkey=self.authkey, lang=self.lang, size=5000)
 
         try:
             response = requests.get(url, timeout=10)
@@ -441,6 +527,125 @@ class LegacyParser(AbstractParser):
         )
 
 
+class PetParser(AbstractParser):
+    """
+    fetches all pet entries from the api
+    """
+
+    def __init__(self, authkey: str, lang: str):
+        self.authkey = authkey
+        self.lang = lang
+
+    def fetch(self) -> list[PetRecord]:
+        uid = self._get_uid()
+        records = []
+        has_next = True
+        max_id = 0
+        while has_next:
+            dicts, time_offset, max_id = self._fetch_page(max_id)
+            for d in dicts:
+                records.append(
+                    PetRecord(
+                        id=d["id"],
+                        pool_id=d["pool_id"],
+                        item_id=d["item_id"],
+                        item_name=d["item_name"],
+                        pet_id=d["pet_id"],
+                        chroma_appearance_id=d["chroma_appearance_id"],
+                        pet_type=d["pet_type"],
+                        blind_box_sub_rarity=d["blind_box_sub_rarity"],
+                        type_name=d["type_name"],
+                        time=d["time"],
+                        uid=uid,
+                        time_zone_offset=time_offset,
+                    )
+                )
+
+    def _fetch_page(self, max_id) -> tuple[dict, int, int]:
+        """
+        Pulls a single page of pet records
+
+        Returns:
+            ret(tuple): dict of pet entries, time_offset, last_id
+        """
+        parsed = urlparse(PET_API_URL)
+        query_dict = parse_qs(parsed.query)
+
+        query_dict["authkey"] = self.authkey
+        query_dict["lang"] = self.lang
+        query_dict["max_id"] = max_id
+        new_query = urlencode(query_dict, doseq=True)
+        url = urlunparse(parsed._replace(query=new_query))
+
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            j = response.json()
+            retcode = j["retcode"]
+            message = j["message"]
+            if retcode == -101:
+                raise AuthkeyTimeoutError(message, retcode)
+            elif retcode == -100:
+                raise AuthkeyError(message, retcode)
+            elif retcode != 0:
+                raise PetError(message, retcode)
+        except requests.RequestException as e:
+            raise PetError(retcode=retcode, message=message) from e
+
+        data = j["data"]
+        entries = data["list"]
+        time_offset = data["region_time_zone"]
+
+        entry_dicts = [
+            {
+                "id": e["id"],
+                "pool_id": e["pool_id"],
+                "item_id": e["item_id"],
+                "item_name": e["item_name"],
+                "pet_id": e["pet_id"],
+                "chroma_appearance_id": e["chroma_appearance_id"],
+                "pet_type": e["pet_type"],
+                "blind_box_sub_rarity": e["blind_box_sub_rarity"],
+                "type_name": e["type_name"],
+                "time": e["time"],
+            }
+            for e in entries
+        ]
+        last_id = entries[-1]["id"]
+        return entry_dicts, time_offset, last_id
+
+    def _get_uid(self) -> str:
+        """
+        Calls the warp api and fetches UID from first entry
+
+        Returns:
+            uid(str): unique identifier of account
+        """
+        try:
+            response = requests.get(
+                build_api_url(gacha_type="1", authkey=self.authkey, lang=self.lang, size=1)
+            )
+            response.raise_for_status()
+            j = response.json()
+            retcode = j["retcode"]
+            message = j["message"]
+            if retcode == -101:
+                raise AuthkeyTimeoutError(message, retcode)
+            elif retcode == -100:
+                raise AuthkeyError(message, retcode)
+            elif retcode != 0:
+                raise ApiConnectionError(message, retcode)
+        except requests.RequestException as e:
+            raise ApiConnectionError("No HTTP Response") from e
+        try:
+            entry = j["data"]["list"][0]
+            return entry["uid"]
+        except KeyError as k:
+            raise UIDError("Unable to find uid in entry") from k
+        except IndexError as i:
+            raise UIDError("Returned empty list") from i
+
+
 # WRITER #
 class RecordWriter(AbstractPullWriter):
     def __init__(self, item_catalog: ItemCatalog):
@@ -520,3 +725,23 @@ class RecordWriter(AbstractPullWriter):
             banner = Banner.objects.create(gacha_id=gacha_id, gacha_type=gacha_type)
             self.banners[gacha_id] = banner
             return banner
+
+
+class PetWriter(AbstractPullWriter):
+    def __init__(self):
+        self.pets = Pet.objects.in_bulk()
+        self.pet_pool = PetPool.objects.in_bulk()
+        self.pet_type = PetType.objects.in_bulk()
+
+    def write(self, records: list[PetRecord]) -> ImportResult:
+        """
+        Writes given pet results to DB
+
+        Args:
+            records(list): a list of pet records
+
+        Returns:
+            result(ImportResult): detailed info about import
+        """
+        incoming_ids = [x.id for x in records]
+        existing_ids = Pet

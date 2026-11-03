@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import AbstractAttribute, AbstractItem, AbstractPull
 
-from .choices import FiftyFifty, GachaTypes, ItemTypes
+from .choices import ChromaAppearance, FiftyFifty, GachaTypes, ItemTypes
 from .constants import CELESTIAL_INVITES
 
 # Create your models here.
@@ -211,3 +211,129 @@ class Warp(AbstractPull):
         verbose_name_plural = _("Warps")
         ordering = ["id"]
         indexes = [models.Index(fields=["gacha_type", "id"])]
+
+
+class PetType(models.Model):
+    """
+    Pet Types (banner?)
+    """
+
+    type_id = models.CharField(
+        max_length=5, verbose_name=_("Type ID"), help_text=_("Type identifier"), primary_key=True
+    )
+    type_name = models.CharField(
+        max_length=50, verbose_name=_("Type Name"), help_text=_("Type Name")
+    )
+
+    class Meta:
+        verbose_name = _("Pet Type")
+        verbose_name_plural = _("Pet Types")
+        ordering = ["type_id"]
+
+    def __str__(self):
+        return f"{self.type_name} ({self.type_id})"
+
+
+class PetPool(models.Model):
+    pool_id = models.CharField(max_length=6, verbose_name=_("Pool ID"), primary_key=True)
+
+    class Meta:
+        verbose_name = _("Pet Pool")
+        verbose_name_plural = _("Pet Pools")
+        ordering = ["pool_id"]
+
+    def __str__(self):
+        return f"{self.pool_id}"
+
+
+class Pet(models.Model):
+    """
+    Pet (special item)
+    """
+
+    name = models.CharField(verbose_name=_("Name"), max_length=50, help_text=_("Pet Name"))
+    pet_id = models.CharField(
+        verbose_name=_("Pet ID"),
+        max_length=10,
+        help_text=_("Unique Pet identifier"),
+        primary_key=True,
+    )
+    item_id = models.CharField(  # seems to be identical with pet id
+        verbose_name=_("Unique item identifier"),
+        max_length=10,
+        help_text=_("Unique item identifier"),
+    )
+
+    pet_type = models.ForeignKey(
+        PetType, on_delete=models.PROTECT, related_name="pets", verbose_name=_("Pet Type")
+    )
+
+    class Meta:
+        verbose_name = _("Pet")
+        verbose_name_plural = _("Pets")
+
+    def __str__(self):
+        return f"{self.name} ({self.pet_id})"
+
+
+class PetVariant(models.Model):
+    """
+    Defines variants (shiny, normal, etc.)
+    """
+
+    pet = models.ForeignKey(
+        Pet, on_delete=models.PROTECT, verbose_name=_("Reference to pet"), related_name="variants"
+    )
+    chroma_appearance_id = models.CharField(
+        verbose_name=_("Chroma ID"),
+        help_text=_("Defines if normal or collector"),
+        choices=ChromaAppearance,
+        default=ChromaAppearance.NORMAL,
+        max_length=2,
+    )
+    blind_box_sub_rarity = models.CharField(
+        verbose_name=_("Sub Rarity"),
+        help_text=_("Sub rarity in blind box"),
+        max_length=3,  # most likely fixed options
+    )
+
+    class Meta:
+        verbose_name = _("Pet Variant")
+        verbose_name_plural = _("Pet Variants")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["pet", "chroma_appearance_id"], name="unique_pet_variant"
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def name(self):
+        if self.chroma_appearance_id == ChromaAppearance.COLLECTOR:
+            return f"{self.pet.name}: Collector"
+        return self.pet.name
+
+
+class PetPull(models.Model):
+    """
+    Pull entry for pets
+    """
+
+    id = models.CharField(
+        max_length=20, verbose_name=_("ID"), help_text=_("Pet Pull ID"), primary_key=True
+    )
+    time = models.DateTimeField(verbose_name=_("Time"), null=True, blank=True)
+    pool = models.ForeignKey(PetPool, on_delete=models.PROTECT, verbose_name=_("Pool"))
+    pet_variant = models.ForeignKey(
+        PetVariant, on_delete=models.PROTECT, verbose_name=_("Pet Variant"), related_name="pulls"
+    )
+
+    class Meta:
+        verbose_name = _("Pet Pull")
+        verbose_name_plural = _("Pet Pulls")
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.pet_variant.variant_name

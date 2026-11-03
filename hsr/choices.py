@@ -26,3 +26,8 @@ class FiftyFifty(models.TextChoices):
     LOST = "Lost", _("Lost")
     GUARANTEED = "Guaranteed", _("Guaranteed")
     NONE = "", _("-")
+
+
+class ChromaAppearance(models.TextChoices):
+    NORMAL = "0", _("Normal")
+    COLLECTOR = "1", _("Collector")

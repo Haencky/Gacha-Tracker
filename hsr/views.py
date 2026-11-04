@@ -360,7 +360,7 @@ def detail_banner(request, banner_id):
 def _add_candidate(catalog: ItemCatalog, q="") -> list:
     items = catalog.all()
     existing = set(Item.objects.values_list("item_id", flat=True))
-    items = [i for i in items if i["item_id"] not in existing]
+    items = [i for i in items if i["item_id"] not in existing and not i["unreleased"]]
     if q:
         items = [
             item for item in items if q.lower() in item["name"].lower() and not item["unreleased"]

@@ -21,10 +21,12 @@ from .exceptions import (
     AuthkeyTimeoutError,
     FileError,
     ItemCatalogItemDoesNotExistError,
+    PetError,
+    UIDError,
 )
 from .forms import AddItemForm, BannerEditForm, ImportFileForm, ImportUrlForm
-from .importer import ApiParser, ItemCatalog, LegacyParser, RecordWriter
-from .models import Banner, Item, Path, Warp
+from .importer import ApiParser, ItemCatalog, LegacyParser, PetParser, PetWriter, RecordWriter
+from .models import Banner, Item, Path, PetType, PetVariant, Warp
 from .services import assign_featured_items, download_missing_images, recalculate_pity
 
 
@@ -123,6 +125,7 @@ def import_api_view(request):
         if form.is_valid():
             authkey, lang = form.cleaned_data["url"]
             parser = ApiParser(authkey=authkey, lang=lang)
+            pet_parser = PetParser(authkey=authkey, lang=lang)
             try:
                 writer = RecordWriter(cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600))
                 result = writer.write(parser.fetch())
@@ -136,6 +139,23 @@ def import_api_view(request):
                 messages.error(request, str(e))
             else:
                 _finish_import(request, result)
+
+            try:
+                pet_writer = PetWriter()
+                pet_result = pet_writer.write(pet_parser.fetch())
+            except AuthkeyTimeoutError:
+                messages.error(request, _("Authkey is too old"))
+            except AuthkeyError:
+                messages.error(request, _("Invalid authkey"))
+            except ApiError:
+                messages.error(request, _("Failed to connect to the API"))
+            except PetError:
+                messages.error(request, "Unable to fetch pet API")
+            except UIDError:
+                messages.error(request, _("Unable to fetch UID"))
+            else:
+                messages.success(request, f"Created pets: {pet_result.new_items}")
+                messages.success(request, f"Imported pet pulls: {pet_result.created}")
                 return redirect("hsr:index")
             return _render_import(request, url_form=form, active_tab="api")
         else:
@@ -154,10 +174,9 @@ def import_file(request):
         form = ImportFileForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data["file"]
-            tmp = NamedTemporaryFile(suffix=".sqlite3", delete=False)
-            for chunk in file.chunks():
-                tmp.write(chunk)
-            tmp.close()
+            with NamedTemporaryFile(suffix=".sqlite3", delete=False) as tmp:
+                for chunk in file.chunks():
+                    tmp.write(chunk)
             try:
                 result = RecordWriter(
                     cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
@@ -405,6 +424,22 @@ def add_search_item(request):
     items = _add_candidate(catalog, q)
 
     return render(request, "hsr/partials/item_add_candidate.html", {"items": items})
+
+
+def overview_pet(request, type_id: str):
+    tabs = PetType.objects.all()
+
+    pets = (
+        PetVariant.objects.all()
+        .select_related("pet", "pet__pet_type")
+        .filter(pet__pet_type=type_id)
+        .annotate(count=Count("pulls"))
+        .order_by("name", "-count", "chroma_appearance_id")
+    )
+
+    return render(
+        request, "hsr/pet_overview.html", {"pets": pets, "tabs": tabs, "pet_type": type_id}
+    )
 
 
 class EditBanner(generic.edit.UpdateView):

@@ -1,0 +1,6 @@
+<div class="rounded-box ring-2 {% if pet.chroma_appearance_id == "1" %}ring-amber-300 {% else %} ring-base-300 {% endif %}">
+    {% if pet.portrait %}
+        <img src="{{ pet.portrait.url }}" alt="{{ pet.name }}" loading="lazy" />
+    {% else %}
+    {% endif %}
+</div>

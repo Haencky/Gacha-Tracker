@@ -4,21 +4,26 @@
 {% block subnav %}
     <nav class="navbar bg-base-100 border-t border-base-300 min-h-12">
         <div class="navbar-start gap-1">
-            <a href='{% url "hsr:index" %}' class="btn btn-ghost btn-sm">{% translate "Home" %}</a>
-            <div>  <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a></div>
-            <div>
-                <a href='{% url "hsr:item-overview" %}' class="btn btn-sm btn-ghost">
-                    <img src='{% static "hsr/InventoryIcon.png" %}' alt="" class="h-7 w-auto" />
-                    {% translate "Items" %}
-                </a>
-                <a href='{% url "hsr:banner-overview" 11 %}'
-                   class="btn btn-sm btn-ghost">
-                    <img src='{% static "hsr/DrawcardIcon.png" %}'
-                         alt='{% translate "Banner" %}'
-                         loading="lazy"
-                         class="h-7 w-auto" />
-                {% translate "Banner" %}</a>
-            </div>
+            <a href='{% url "hsr:index" %}' class="btn btn-ghost btn-sm">
+                <img src='{% static "hsr/DailyQuestIcon.png" %}' alt="" class="h-7 w-auto" />
+                {% translate "Home" %}
+            </a>
+            <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a>
+            <a href='{% url "hsr:item-overview" %}' class="btn btn-sm btn-ghost">
+                <img src='{% static "hsr/InventoryIcon.png" %}' alt="" class="h-7 w-auto" />
+                {% translate "Items" %}
+            </a>
+            <a href='{% url "hsr:banner-overview" 11 %}'
+               class="btn btn-sm btn-ghost">
+                <img src='{% static "hsr/DrawcardIcon.png" %}'
+                     alt='{% translate "Banner" %}'
+                     loading="lazy"
+                     class="h-7 w-auto" />
+            {% translate "Banner" %}</a>
+            <a href='{% url "hsr:pet-overview" 1 %}' class="btn btn-ghost btn-sm">
+                <img src='{% static "hsr/Icon_Pet.webp" %}' alt="" class="h-7 w-auto" />
+                {% translate "Pets" %}
+            </a>
         </div>
         <div class="navbar-end mr-2">
             <div class="dropdown dropdown-end">

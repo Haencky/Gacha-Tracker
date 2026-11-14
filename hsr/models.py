@@ -251,7 +251,9 @@ class Pet(models.Model):
     Pet (special item)
     """
 
-    name = models.CharField(verbose_name=_("Name"), max_length=50, help_text=_("Pet Name"))
+    name = models.CharField(
+        verbose_name=_("Name"), max_length=50, help_text=_("Pet Name (default)"), blank=True
+    )
     pet_id = models.CharField(
         verbose_name=_("Pet ID"),
         max_length=10,
@@ -282,8 +284,13 @@ class PetVariant(models.Model):
     """
 
     pet = models.ForeignKey(
-        Pet, on_delete=models.PROTECT, verbose_name=_("Reference to pet"), related_name="variants"
+        Pet,
+        on_delete=models.PROTECT,
+        verbose_name=_("Pet"),
+        help_text=_("Reference to pet"),
+        related_name="variants",
     )
+    name = models.CharField(verbose_name="Variant name", help_text=_("Variant name"), max_length=50)
     chroma_appearance_id = models.CharField(
         verbose_name=_("Chroma ID"),
         help_text=_("Defines if normal or collector"),
@@ -295,6 +302,13 @@ class PetVariant(models.Model):
         verbose_name=_("Sub Rarity"),
         help_text=_("Sub rarity in blind box"),
         max_length=3,  # most likely fixed options
+    )
+    portrait = models.ImageField(
+        verbose_name=_("Portrait"), null=True, blank=True, upload_to="hsr/pet/portrait"
+    )
+
+    icon = models.ImageField(
+        verbose_name=_("Icon"), null=True, blank=True, upload_to="hsr/pet/icon"
     )
 
     class Meta:
@@ -308,12 +322,6 @@ class PetVariant(models.Model):
 
     def __str__(self):
         return self.name
-
-    @property
-    def name(self):
-        if self.chroma_appearance_id == ChromaAppearance.COLLECTOR:
-            return f"{self.pet.name}: Collector"
-        return self.pet.name
 
 
 class PetPull(models.Model):
@@ -329,6 +337,7 @@ class PetPull(models.Model):
     pet_variant = models.ForeignKey(
         PetVariant, on_delete=models.PROTECT, verbose_name=_("Pet Variant"), related_name="pulls"
     )
+    uid = models.CharField(max_length=20, verbose_name=_("UID"), help_text=_("Account identifier"))
 
     class Meta:
         verbose_name = _("Pet Pull")
@@ -336,4 +345,4 @@ class PetPull(models.Model):
         ordering = ["id"]
 
     def __str__(self):
-        return self.pet_variant.variant_name
+        return self.pet_variant.name

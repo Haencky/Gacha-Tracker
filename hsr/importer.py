@@ -1,4 +1,5 @@
 import sqlite3
+import time
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
@@ -9,6 +10,7 @@ from django.utils.text import slugify
 
 from core.importer import AbstractParser, AbstractPullRecord, AbstractPullWriter, ImportResult
 
+from .choices import ChromaAppearance
 from .exceptions import (
     ApiConnectionError,
     AuthkeyError,
@@ -21,9 +23,21 @@ from .exceptions import (
     PetError,
     UIDError,
 )
-from .models import Banner, GachaTypes, Item, ItemTypes, Pet, PetPool, PetType, Warp
+from .models import (
+    Banner,
+    GachaTypes,
+    Item,
+    ItemTypes,
+    Pet,
+    PetPool,
+    PetPull,
+    PetType,
+    PetVariant,
+    Warp,
+)
 from .services import item_image_url
 
+PET_PAGE_SIZE = 5
 FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
 PRYDWEN_GUIDE = "https://www.prydwen.gg/star-rail/characters/{slug}"
 PRYDWEN_SPECIAL_NAMES = {
@@ -349,7 +363,7 @@ class PetRecord(AbstractPullRecord):
         id: str,
         pool_id: str,
         item_id: str,
-        item_name,
+        item_name: str,
         pet_id: str,
         chroma_appearance_id: str,
         pet_type: str,
@@ -543,6 +557,7 @@ class PetParser(AbstractParser):
         max_id = 0
         while has_next:
             dicts, time_offset, max_id = self._fetch_page(max_id)
+            has_next = max_id is not None
             for d in dicts:
                 records.append(
                     PetRecord(
@@ -551,7 +566,7 @@ class PetParser(AbstractParser):
                         item_id=d["item_id"],
                         item_name=d["item_name"],
                         pet_id=d["pet_id"],
-                        chroma_appearance_id=d["chroma_appearance_id"],
+                        chroma_appearance_id=str(d["chroma_appearance_id"]),
                         pet_type=d["pet_type"],
                         blind_box_sub_rarity=d["blind_box_sub_rarity"],
                         type_name=d["type_name"],
@@ -560,6 +575,8 @@ class PetParser(AbstractParser):
                         time_zone_offset=time_offset,
                     )
                 )
+            time.sleep(0.3)
+        return records
 
     def _fetch_page(self, max_id) -> tuple[dict, int, int]:
         """
@@ -590,7 +607,7 @@ class PetParser(AbstractParser):
             elif retcode != 0:
                 raise PetError(message, retcode)
         except requests.RequestException as e:
-            raise PetError(retcode=retcode, message=message) from e
+            raise PetError("No HTTP response") from e
 
         data = j["data"]
         entries = data["list"]
@@ -611,7 +628,7 @@ class PetParser(AbstractParser):
             }
             for e in entries
         ]
-        last_id = entries[-1]["id"]
+        last_id = entries[-1]["id"] if len(entries) == PET_PAGE_SIZE else None
         return entry_dicts, time_offset, last_id
 
     def _get_uid(self) -> str:
@@ -623,7 +640,8 @@ class PetParser(AbstractParser):
         """
         try:
             response = requests.get(
-                build_api_url(gacha_type="1", authkey=self.authkey, lang=self.lang, size=1)
+                build_api_url(gacha_type="1", authkey=self.authkey, lang=self.lang, size=1),
+                timeout=5,
             )
             response.raise_for_status()
             j = response.json()
@@ -728,10 +746,15 @@ class RecordWriter(AbstractPullWriter):
 
 
 class PetWriter(AbstractPullWriter):
+    """
+    Writer for adding pet records to the DB
+    """
+
     def __init__(self):
         self.pets = Pet.objects.in_bulk()
-        self.pet_pool = PetPool.objects.in_bulk()
-        self.pet_type = PetType.objects.in_bulk()
+        self.variants = {(v.pet_id, v.chroma_appearance_id): v for v in PetVariant.objects.all()}
+        self.pet_pools = PetPool.objects.in_bulk()
+        self.pet_types = PetType.objects.in_bulk()
 
     def write(self, records: list[PetRecord]) -> ImportResult:
         """
@@ -744,4 +767,121 @@ class PetWriter(AbstractPullWriter):
             result(ImportResult): detailed info about import
         """
         incoming_ids = [x.id for x in records]
-        existing_ids = Pet
+        existing_ids = set(PetPull.objects.filter(id__in=incoming_ids).values_list("id", flat=True))
+        new_records = [r for r in records if r.id not in existing_ids]
+
+        c_old_variants = len(self.variants)
+
+        pulls = []
+
+        with transaction.atomic():
+            for record in new_records:
+                pool = self._get_pool(record.pool_id)
+                variant = self._get_variant(record)
+
+                pulls.append(
+                    PetPull(
+                        id=record.id,
+                        time=record.aware_time,
+                        pool=pool,
+                        pet_variant=variant,
+                        uid=record.uid,
+                    )
+                )
+            PetPull.objects.bulk_create(pulls)
+        return ImportResult(
+            created=len(pulls),
+            skipped=len(existing_ids),
+            new_items=len(self.variants) - c_old_variants,
+            unknown_items=set(),  # since no item catalog is used
+        )
+
+    def _get_pet_type(self, type_id: str, type_name: str) -> PetType:
+        """
+        Returns a (new created) pet type
+
+        Args:
+            type_id(str): type identifier
+            type_name(str): type name
+
+        Returns:
+            pet_type(PetType): existing or new created pet type
+        """
+        pet_type = self.pet_types.get(type_id)
+        if pet_type is not None:
+            return pet_type
+        else:
+            new_pet_type = PetType.objects.create(type_id=type_id, type_name=type_name)
+            self.pet_types[type_id] = new_pet_type
+            return new_pet_type
+
+    def _get_pet(self, record: PetRecord) -> Pet:
+        """
+        Returns a (new created) pet
+
+        Args:
+            record(PetRecord): pet record containing the pulled pet
+
+        Returns:
+            pet(Pet): existing or new created pet
+        """
+        pet_type = self._get_pet_type(type_id=record.pet_type, type_name=record.type_name)
+        pet = self.pets.get(record.pet_id)
+        if pet is not None:
+            if not pet.name and record.chroma_appearance_id == ChromaAppearance.NORMAL:
+                pet.name = record.item_name
+                pet.save(update_fields=["name"])
+            return pet
+        else:
+            new_pet = Pet.objects.create(
+                name=record.item_name
+                if str(record.chroma_appearance_id) == ChromaAppearance.NORMAL
+                else "",
+                pet_id=record.pet_id,
+                item_id=record.item_id,
+                pet_type=pet_type,
+            )
+            self.pets[record.pet_id] = new_pet
+            return new_pet
+
+    def _get_variant(self, record: PetRecord) -> PetVariant:
+        """
+        Returns a (new created) pet
+
+        Args:
+            record(PetRecord): pet record containing the pulled pet variant
+
+        Returns:
+            variant(PetVariant): existing or new created pet variant
+        """
+        pet = self._get_pet(record)
+        pet_variant = self.variants.get((pet.pet_id, record.chroma_appearance_id))
+        if pet_variant is not None:
+            return pet_variant
+        else:
+            new_pet_variant = PetVariant.objects.create(
+                name=record.item_name,
+                pet=pet,
+                chroma_appearance_id=record.chroma_appearance_id,
+                blind_box_sub_rarity=record.blind_box_sub_rarity,
+            )
+            self.variants[(pet.pet_id, record.chroma_appearance_id)] = new_pet_variant
+            return new_pet_variant
+
+    def _get_pool(self, pool_id: str) -> PetPool:
+        """
+        Returns a (new created) pool object
+
+        Args:
+            pool_id(str): pool identifier
+
+        Returns:
+            pool(PetPool): pool object
+        """
+        pool = self.pet_pools.get(pool_id)
+        if pool is not None:
+            return pool
+        else:
+            new_pool = PetPool.objects.create(pool_id=pool_id)
+            self.pet_pools[pool_id] = new_pool
+            return new_pool

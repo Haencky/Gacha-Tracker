@@ -84,7 +84,7 @@ class UIDError(Exception):
         super().__init__(message)
 
 
-class PetError(Exception):
+class PetError(ApiError):
     """
     Base class for pet api
     """
@@ -92,3 +92,9 @@ class PetError(Exception):
     def __init__(self, message, retcode: int = None):
         self.retcode = retcode
         super().__init__(message)
+
+
+class LanguageError(ApiError):
+    def __init__(self, message):
+        self.retcode = 108
+        super().init__(message)

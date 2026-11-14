@@ -1,10 +1,4 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-    {% for game in games %}
-        <div>
-            <img src="{% static game.logo %}" alt="{{ game.verbose_name }}" />
-            <div>{{ game.summary }}</div>
-        </div>
-    {% endfor %}
 {% endblock content %}

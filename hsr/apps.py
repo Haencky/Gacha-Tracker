@@ -7,7 +7,6 @@ class HsrConfig(AppConfig):
     verbose_name = "Honkai: Star Rail"
     slug = "hsr"
     url_name = "hsr:index"
-    logo = "hsr/logo.png"
 
     def summary(self):
         from .models import Warp

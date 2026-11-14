@@ -97,4 +97,4 @@ class PetError(ApiError):
 class LanguageError(ApiError):
     def __init__(self, message):
         self.retcode = 108
-        super().init__(message)
+        super().__init__(message)

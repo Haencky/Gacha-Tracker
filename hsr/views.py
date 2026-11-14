@@ -31,12 +31,11 @@ from .services import assign_featured_items, download_missing_images, recalculat
 
 
 def _finish_import(request, result):
-    if result.created == 0:
-        return
-    messages.success(
-        request,
-        _(f"Imported {result.created}, New items: {result.new_items}"),
-    )
+    if result.created > 0:
+        messages.success(
+            request,
+            _(f"Imported {result.created}, New items: {result.new_items}"),
+        )
     if result.unknown_items:
         messages.warning(request, f"Unknown items: {result.unknown_items}")
     assignment = assign_featured_items()

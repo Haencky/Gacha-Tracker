@@ -1,0 +1,14 @@
+.env
+db.sqlite3*
+node_modules/
+media/
+.vscode/
+.git/
+.pytest_cache/
+.ruff_cache/
+.todo/
+.venv/
+staticfiles/
+static/css/app.css
+*.mo
+**/__pycache__/

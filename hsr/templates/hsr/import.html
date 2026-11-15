@@ -96,7 +96,8 @@
                       hx-disabled-elt="find button[type='submit']">
                     {% csrf_token %}
                     <fieldset class="fieldset">
-                        <legend class="fieldset-legend">{% translate "Database file" %}</legend>
+                        <legend class="fieldset-legend"> {% blocktranslate with url="https://github.com/Haencky/HSR-Warps" %}Database file (db.sqlite3) of the old <a href="{{ url }}" class="link" target="_blank" rel="noopener noreferrer">HSR-Warptracker</a>{% endblocktranslate %}
+                        </legend>
                         <input type="file"
                                id="{{ file_form.file.id_for_label }}"
                                name="{{ file_form.file.html_name }}"

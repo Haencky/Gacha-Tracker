@@ -185,7 +185,7 @@ def import_api_view(request):
 
 def import_file(request):
     """
-    Takes file (UIGF, legacy db, Star Rail Station)
+    Takes file (UIGF, legacy db)
     """
     if request.method == "POST":
         form = ImportFileForm(request.POST, request.FILES)

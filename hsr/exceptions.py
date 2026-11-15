@@ -84,17 +84,13 @@ class UIDError(Exception):
         super().__init__(message)
 
 
-class PetError(ApiError):
-    """
-    Base class for pet api
-    """
-
-    def __init__(self, message, retcode: int = None):
-        self.retcode = retcode
-        super().__init__(message)
-
-
 class LanguageError(ApiError):
     def __init__(self, message):
-        self.retcode = 108
+        self.retcode = -108
         super().__init__(message)
+
+
+class RateLimitError(ApiConnectionError):
+    """
+    Error if API was visited to often
+    """

@@ -1,4 +1,5 @@
 # Create your views here.
+import logging
 import os
 from tempfile import NamedTemporaryFile
 
@@ -21,13 +22,15 @@ from .exceptions import (
     AuthkeyTimeoutError,
     FileError,
     ItemCatalogItemDoesNotExistError,
-    PetError,
+    RateLimitError,
     UIDError,
 )
 from .forms import AddItemForm, BannerEditForm, ImportFileForm, ImportUrlForm
 from .importer import ApiParser, ItemCatalog, LegacyParser, PetParser, PetWriter, RecordWriter
 from .models import Banner, Item, Path, PetType, PetVariant, Warp
 from .services import assign_featured_items, download_missing_images, recalculate_pity
+
+logger = logging.getLogger(__name__)
 
 
 def _finish_import(request, result):
@@ -56,7 +59,7 @@ def _finish_import(request, result):
     if f_portraits := donwload.item_portraits.fail:
         messages.error(request, _(f"Failed to download {f_portraits} portraits"))
     if s_dtypes := donwload.dtype.success:
-        messages.success(request, _(f"Dpwnloaded {s_dtypes} damage type icons"))
+        messages.success(request, _(f"Downloaded {s_dtypes} damage type icons"))
     if f_dtype := donwload.dtype.fail:
         messages.error(request, _(f"Failed to download {f_dtype} damage type icons"))
     if s_path := donwload.path.success:
@@ -128,12 +131,16 @@ def import_api_view(request):
             try:
                 writer = RecordWriter(cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600))
                 result = writer.write(parser.fetch())
+            except RateLimitError:
+                messages.error(request, "Visited to frequently")
+                logger.error("Visited to frequently")
             except AuthkeyTimeoutError:
                 messages.error(request, _("Authkey is too old"))
             except AuthkeyError:
                 messages.error(request, _("Invalid authkey"))
-            except ApiError:
-                messages.error(request, _("Failed to connect to the API"))
+            except ApiError as e:
+                messages.error(request, f"{e.retcode} ({str(e)})")
+                logger.error("API error %s:%s", e.retcode, e)
             except ItemCatalogItemDoesNotExistError as e:
                 messages.error(request, str(e))
             else:
@@ -148,8 +155,6 @@ def import_api_view(request):
                 messages.error(request, _("Invalid authkey"))
             except ApiError:
                 messages.error(request, _("Failed to connect to the API"))
-            except PetError:
-                messages.error(request, "Unable to fetch pet API")
             except UIDError:
                 messages.error(request, _("Unable to fetch UID"))
             else:

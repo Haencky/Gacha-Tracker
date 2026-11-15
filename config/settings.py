@@ -31,6 +31,7 @@ SECRET_KEY = env.get_value("SECRET_KEY", str)
 DEBUG = env.get_value("DEBUG", bool, default=False)
 
 ALLOWED_HOSTS = env.get_value("ALLOWED_HOSTS", list, default=["127.0.0.1", "localhost"])
+CSRF_TRUSTED_ORIGINS = env.get_value("CSRF_TRUSTED_ORIGINS", list, default=[])
 
 
 # Application definition
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -78,6 +80,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
@@ -138,8 +148,8 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
+MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
+SERVE_MEDIA = env.get_value("SERVE_MEDIA", bool, default=True)
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration

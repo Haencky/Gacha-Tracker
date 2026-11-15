@@ -20,7 +20,7 @@ from .exceptions import (
     ItemCatalogItemDoesNotExistError,
     ItemCatalogUnknownTypeError,
     LegacyFileError,
-    PetError,
+    RateLimitError,
     UIDError,
 )
 from .models import (
@@ -48,6 +48,7 @@ PRYDWEN_SPECIAL_NAMES = {
     "1506": "silver-wolf-lv-999",  # django slugify error
     "1225": "tingyun-fugue",
     "1112": "topaz",  # where is numby ? :(
+    "1511": "aha",
     "8001": "trailblazer-destoruction",
     "8002": "trailblazer-destruction",
     "8003": "trailblazer-preservation",
@@ -91,6 +92,8 @@ LEGACY_QUERY = """
 """
 STANDARD_BANNER_ID = "1001"
 PULL_ID_LENGTH = 19
+MAX_ATTEMPTS = 3
+REQUEST_DELAY = 0.3
 
 
 # SUPPORT FUNCTIONS
@@ -119,6 +122,42 @@ def build_api_url(gacha_type: str, authkey: str, lang: str, size: int):
     url = urlunparse(parsed._replace(query=new_query))
 
     return url
+
+
+def _api_get(url: str) -> dict:
+    """
+    Support function for calling hoyos API
+
+    Args:
+        url(str): url endpoint
+
+    Returns:
+        data(dict): data returned from the api
+    """
+    time.sleep(REQUEST_DELAY)
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            j = response.json()
+        except requests.RequestException as e:  # no http response
+            raise ApiConnectionError("No HTTP response") from e
+        retcode = j["retcode"]
+        if retcode == 0:
+            if j.get("data") is None:
+                raise ApiConnectionError("API returned no data")
+            return j["data"]
+        elif retcode == -110:  # visited to often
+            time.sleep(2**attempt)
+            continue
+        elif retcode == -101:  # http ok, authkey too old
+            raise AuthkeyTimeoutError(j["message"], retcode=retcode)
+        elif retcode == -100:  # invalid authkey
+            raise AuthkeyError(j["message"], retcode=retcode)
+        elif retcode != 0:
+            raise ApiConnectionError(j["message"], retcode=retcode)  # other error
+
+    raise RateLimitError("Visited too frequently", retcode=-110)
 
 
 # SUPPORT CLASSES #
@@ -424,6 +463,7 @@ class ApiParser(AbstractParser):
             AuthkeyError
             AuthkeyTimeoutError
             GachaTypeError
+            RateLimitError
         """
         records = []
         for x in GACHA_TYPE_URLS:
@@ -445,26 +485,13 @@ class ApiParser(AbstractParser):
             AuthkeyTimeoutError
             AuthkeyError
             GachaTypeError
+            RateLimitError
         """
 
         url = build_api_url(gacha_type=gacha_type, authkey=self.authkey, lang=self.lang, size=5000)
 
-        try:
-            response = requests.get(url, timeout=10)
-            if not response.status_code == 200:  # http code not "OK"
-                raise ApiConnectionError("Invalid HTTP response")
-            j = response.json()
-            retcode = j["retcode"]
-            if retcode == -101:  # http ok, authkey too old
-                raise AuthkeyTimeoutError(j["message"], retcode=retcode)
-            elif retcode == -100:  # invalid authkey
-                raise AuthkeyError(j["message"], retcode=retcode)
-            elif retcode != 0:
-                raise ApiConnectionError(j["message"], retcode=retcode)  # other error
-        except requests.RequestException as e:  # no http response
-            raise ApiConnectionError("No HTTP response") from e
+        data = _api_get(url)
 
-        data = j["data"]
         time_offset = data["region_time_zone"]
         entries = data["list"]
 
@@ -575,7 +602,6 @@ class PetParser(AbstractParser):
                         time_zone_offset=time_offset,
                     )
                 )
-            time.sleep(0.3)
         return records
 
     def _fetch_page(self, max_id) -> tuple[dict, int, int]:
@@ -594,22 +620,7 @@ class PetParser(AbstractParser):
         new_query = urlencode(query_dict, doseq=True)
         url = urlunparse(parsed._replace(query=new_query))
 
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            j = response.json()
-            retcode = j["retcode"]
-            message = j["message"]
-            if retcode == -101:
-                raise AuthkeyTimeoutError(message, retcode)
-            elif retcode == -100:
-                raise AuthkeyError(message, retcode)
-            elif retcode != 0:
-                raise PetError(message, retcode)
-        except requests.RequestException as e:
-            raise PetError("No HTTP response") from e
-
-        data = j["data"]
+        data = _api_get(url)
         entries = data["list"]
         time_offset = data["region_time_zone"]
 
@@ -638,25 +649,9 @@ class PetParser(AbstractParser):
         Returns:
             uid(str): unique identifier of account
         """
+        data = _api_get(build_api_url(gacha_type="1", authkey=self.authkey, lang=self.lang, size=1))
         try:
-            response = requests.get(
-                build_api_url(gacha_type="1", authkey=self.authkey, lang=self.lang, size=1),
-                timeout=5,
-            )
-            response.raise_for_status()
-            j = response.json()
-            retcode = j["retcode"]
-            message = j["message"]
-            if retcode == -101:
-                raise AuthkeyTimeoutError(message, retcode)
-            elif retcode == -100:
-                raise AuthkeyError(message, retcode)
-            elif retcode != 0:
-                raise ApiConnectionError(message, retcode)
-        except requests.RequestException as e:
-            raise ApiConnectionError("No HTTP Response") from e
-        try:
-            entry = j["data"]["list"][0]
+            entry = data["list"][0]
             return entry["uid"]
         except KeyError as k:
             raise UIDError("Unable to find uid in entry") from k
@@ -846,7 +841,7 @@ class PetWriter(AbstractPullWriter):
 
     def _get_variant(self, record: PetRecord) -> PetVariant:
         """
-        Returns a (new created) pet
+        Returns a (new created) pet variant
 
         Args:
             record(PetRecord): pet record containing the pulled pet variant

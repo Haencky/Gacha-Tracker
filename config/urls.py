@@ -24,6 +24,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
     path("hsr/", include("hsr.urls", namespace="hsr")),
+    path("accounts/", include("django.contrib.auth.urls")),
 ]
 
 if settings.SERVE_MEDIA:

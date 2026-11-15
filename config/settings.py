@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "core",
     "hsr",
 ]
-
+REQUIRE_LOGIN = env.get_value("REQUIRE_LOGIN", bool, default=True)
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -58,6 +58,13 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if REQUIRE_LOGIN:
+    MIDDLEWARE.append("django.contrib.auth.middleware.LoginRequiredMiddleware")
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "login"
 
 ROOT_URLCONF = "config.urls"
 

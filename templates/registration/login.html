@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Login" %} · Gacha Tracker{% endblock title %}
+{% block content %}
+    <div class="mx-auto mt-12 max-w-sm">
+        <div class="card bg-base-100 shadow-sm">
+            <form method="post" action="{% url 'login' %}" class="card-body gap-4">
+                {% csrf_token %}
+                <h1 class="card-title text-2xl">{% translate "Login" %}</h1>
+                {# wrong username/password is not tied to a single field, so it lands here #}
+                {% for error in form.non_field_errors %}
+                    <div role="alert" class="alert alert-error alert-soft">{{ error }}</div>
+                {% endfor %}
+                <fieldset class="fieldset">
+                    <label class="fieldset-legend" for="{{ form.username.id_for_label }}">{% translate "Username" %}</label>
+                    <input type="text"
+                           id="{{ form.username.id_for_label }}"
+                           name="{{ form.username.html_name }}"
+                           value="{{ form.username.value|default:'' }}"
+                           autocomplete="username"
+                           autocapitalize="none"
+                           required
+                           autofocus
+                           class="input w-full {% if form.username.errors %}input-error{% endif %}">
+                    {% for error in form.username.errors %}
+                        <p class="label text-error">{{ error }}</p>
+                    {% endfor %}
+                    <label class="fieldset-legend" for="{{ form.password.id_for_label }}">{% translate "Password" %}</label>
+                    {# no value attribute: the password is never sent back to the browser #}
+                    <input type="password"
+                           id="{{ form.password.id_for_label }}"
+                           name="{{ form.password.html_name }}"
+                           autocomplete="current-password"
+                           required
+                           class="input w-full {% if form.password.errors %}input-error{% endif %}">
+                    {% for error in form.password.errors %}
+                        <p class="label text-error">{{ error }}</p>
+                    {% endfor %}
+                </fieldset>
+                {# page the user originally wanted, LoginView redirects there after login #}
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="btn btn-primary w-full">{% translate "Log in" %}</button>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

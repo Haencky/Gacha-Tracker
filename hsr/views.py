@@ -26,46 +26,55 @@ from .exceptions import (
     UIDError,
 )
 from .forms import AddItemForm, BannerEditForm, ImportFileForm, ImportUrlForm
-from .importer import ApiParser, ItemCatalog, LegacyParser, PetParser, PetWriter, RecordWriter
+from .importer import (
+    ApiParser,
+    ImportResult,
+    ItemCatalog,
+    LegacyParser,
+    PetParser,
+    PetWriter,
+    RecordWriter,
+)
 from .models import Banner, Item, Path, PetType, PetVariant, Warp
 from .services import assign_featured_items, download_missing_images, recalculate_pity
 
 logger = logging.getLogger(__name__)
 
 
-def _finish_import(request, result):
+def _finish_import(request, result: ImportResult):
     if result.created > 0:
         messages.success(
             request,
-            _(f"Imported {result.created}, New items: {result.new_items}"),
+            f"Imported {result.created}, New items: {result.new_items}",
         )
     if result.unknown_items:
         messages.warning(request, f"Unknown items: {result.unknown_items}")
     assignment = assign_featured_items()
     recalculate_pity()
     if assignment.success:
-        messages.success(request, _(f"Successfully assigned {assignment.success} items"))
+        messages.success(request, f"Successfully assigned {assignment.success} items")
     if assignment.fail:
-        messages.error(request, _(f"Failed to assign {assignment.fail} items"))
+        messages.warning(request, f"Failed to assign {assignment.fail} items")
     donwload = download_missing_images(
         catalog=cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
     )
     if s_icons := donwload.item_icons.success:
-        messages.success(request, _(f"Downloaded {s_icons} icons"))
+        messages.success(request, f"Downloaded {s_icons} icons")
+
     if f_icons := donwload.item_icons.fail:
-        messages.error(request, _(f"Failed to download {f_icons} icons"))
+        messages.error(request, f"Failed to download {f_icons} icons")
     if s_portraits := donwload.item_portraits.success:
-        messages.success(request, _(f"Downloaded  {s_portraits} portraits"))
+        messages.success(request, f"Downloaded  {s_portraits} portraits")
     if f_portraits := donwload.item_portraits.fail:
-        messages.error(request, _(f"Failed to download {f_portraits} portraits"))
+        messages.error(request, f"Failed to download {f_portraits} portraits")
     if s_dtypes := donwload.dtype.success:
-        messages.success(request, _(f"Downloaded {s_dtypes} damage type icons"))
+        messages.success(request, f"Downloaded {s_dtypes} damage type icons")
     if f_dtype := donwload.dtype.fail:
-        messages.error(request, _(f"Failed to download {f_dtype} damage type icons"))
+        messages.error(request, f"Failed to download {f_dtype} damage type icons")
     if s_path := donwload.path.success:
-        messages.success(request, _(f"Downloaded {s_path} path icons"))
+        messages.success(request, f"Downloaded {s_path} path icons")
     if f_path := donwload.path.fail:
-        messages.error(request, _(f"Failed to download {f_path} path icons"))
+        messages.error(request, f"Failed to download {f_path} path icons")
 
 
 def _render_import(
@@ -133,30 +142,38 @@ def import_api_view(request):
                 result = writer.write(parser.fetch())
             except RateLimitError:
                 messages.error(request, "Visited to frequently")
-                logger.error("Visited to frequently")
+                logger.exception("Visited to frequently")
             except AuthkeyTimeoutError:
-                messages.error(request, _("Authkey is too old"))
+                messages.warning(request, _("Authkey is too old"))
             except AuthkeyError:
-                messages.error(request, _("Invalid authkey"))
+                messages.warning(request, _("Invalid authkey"))
             except ApiError as e:
                 messages.error(request, f"{e.retcode} ({str(e)})")
-                logger.error("API error %s:%s", e.retcode, e)
+                logger.exception("API error %s:%s", e.retcode, e)
             except ItemCatalogItemDoesNotExistError as e:
                 messages.error(request, str(e))
+                logger.exception("Iteme catalog error %s", str(e))
             else:
                 _finish_import(request, result)
 
             try:
                 pet_writer = PetWriter()
                 pet_result = pet_writer.write(pet_parser.fetch())
+            except RateLimitError:
+                messages.error(request, "Visited to frequently")
+                logger.exception("Visited to frequently")
             except AuthkeyTimeoutError:
                 messages.error(request, _("Authkey is too old"))
+                logger.warning("Provided authkey is too old")
             except AuthkeyError:
                 messages.error(request, _("Invalid authkey"))
-            except ApiError:
+                logger.warning("Provided authkey is invalid")
+            except ApiError as e:
                 messages.error(request, _("Failed to connect to the API"))
+                logger.exception("Failed to connect to the API %s:%s", e.retcode, str(e))
             except UIDError:
                 messages.error(request, _("Unable to fetch UID"))
+                logger.exception("Unable to get UID from pull history")
             else:
                 messages.success(request, f"Created pets: {pet_result.new_items}")
                 messages.success(request, f"Imported pet pulls: {pet_result.created}")

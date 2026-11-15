@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import time
 from contextlib import closing
@@ -36,6 +37,10 @@ from .models import (
     Warp,
 )
 from .services import item_image_url
+
+warp_logger = logging.getLogger(f"{__name__}.warps")
+pet_logger = logging.getLogger(f"{__name__}.pets")
+logger = logging.getLogger(__name__)
 
 PET_PAGE_SIZE = 5
 FRIBBELS_ITEM_URL = "https://raw.githubusercontent.com/fribbels/hsr-optimizer/refs/heads/main/src/data/game_data.json"
@@ -148,6 +153,14 @@ def _api_get(url: str) -> dict:
                 raise ApiConnectionError("API returned no data")
             return j["data"]
         elif retcode == -110:  # visited to often
+            endpoint = urlparse(url).path.rsplit("/", 1)[-1]
+            logger.warning(
+                "Rate Limit error on %s (attempt %d/%d) waiting %d seconds",
+                endpoint,
+                attempt + 1,
+                MAX_ATTEMPTS,
+                2**attempt,
+            )
             time.sleep(2**attempt)
             continue
         elif retcode == -101:  # http ok, authkey too old
@@ -231,7 +244,9 @@ class ItemCatalog:
             characters = {key: value for key, value in chars.items() if key.isdigit()}
         except KeyError as e:
             raise ItemCatalogUnknownTypeError("characters is not a valid key in items") from e
-
+        logger.info(
+            "Loaded catalog: %d characters, %d light cones", len(characters), len(light_cones)
+        )
         return cls(light_cones=light_cones, characters=characters, image_ids=image_ids)
 
     def image_id(self, item_id: str) -> str:
@@ -467,6 +482,7 @@ class ApiParser(AbstractParser):
         """
         records = []
         for x in GACHA_TYPE_URLS:
+            warp_logger.debug("Fetching gacha type %s", x)
             records.extend(self.fetch_gacha_type(x))
         return records
 
@@ -494,6 +510,7 @@ class ApiParser(AbstractParser):
 
         time_offset = data["region_time_zone"]
         entries = data["list"]
+        warp_logger.info("Fetched %d warps for gacha type %d", len(entries), gacha_type)
 
         return [
             WarpRecord(
@@ -539,8 +556,9 @@ class LegacyParser(AbstractParser):
                 rows = conn.execute(LEGACY_QUERY).fetchall()
         except sqlite3.DatabaseError as e:
             raise LegacyFileError(f"Could not read legacy database: {e}") from e
-
-        return [self._to_record(row) for row in rows]
+        records = [self._to_record(row) for row in rows]
+        warp_logger.info("Read %d warps from legacy file", len(records))
+        return records
 
     @staticmethod
     def _to_record(row: sqlite3.Row) -> WarpRecord:
@@ -582,6 +600,7 @@ class PetParser(AbstractParser):
         records = []
         has_next = True
         max_id = 0
+        pages = 0
         while has_next:
             dicts, time_offset, max_id = self._fetch_page(max_id)
             has_next = max_id is not None
@@ -602,6 +621,8 @@ class PetParser(AbstractParser):
                         time_zone_offset=time_offset,
                     )
                 )
+            pages += 1
+        pet_logger.info("Fetched %d pets in %d pages", len(records), pages)
         return records
 
     def _fetch_page(self, max_id) -> tuple[dict, int, int]:
@@ -619,6 +640,8 @@ class PetParser(AbstractParser):
         query_dict["max_id"] = max_id
         new_query = urlencode(query_dict, doseq=True)
         url = urlunparse(parsed._replace(query=new_query))
+
+        pet_logger.debug("Fetching pets with max id %s", max_id)
 
         data = _api_get(url)
         entries = data["list"]
@@ -649,9 +672,11 @@ class PetParser(AbstractParser):
         Returns:
             uid(str): unique identifier of account
         """
+        pet_logger.debug("Fetching UID from API endpoint")
         data = _api_get(build_api_url(gacha_type="1", authkey=self.authkey, lang=self.lang, size=1))
         try:
             entry = data["list"][0]
+            pet_logger.debug("Successfully fetched UID")
             return entry["uid"]
         except KeyError as k:
             raise UIDError("Unable to find uid in entry") from k
@@ -694,6 +719,9 @@ class RecordWriter(AbstractPullWriter):
                     item = self._get_item(record)
                 except ItemCatalogItemDoesNotExistError:
                     unknown_items.add(record.item_id)
+                    warp_logger.warning(
+                        "Added %s (%s) to unknown items", record.item_name, record.item_id
+                    )
                     continue
                 banner = self._get_banner(record.gacha_id, record.gacha_type)
                 warps.append(
@@ -707,6 +735,10 @@ class RecordWriter(AbstractPullWriter):
                     )
                 )
             Warp.objects.bulk_create(warps)
+        warp_logger.info("Created %d warps", len(warps))
+        warp_logger.info("Skipped %d existing entries", len(existing_ids))
+        warp_logger.info("Created %d new items", len(self.items) - c_old_items)
+        warp_logger.warning("Received %d unknown items", len(unknown_items))
         return ImportResult(
             created=len(warps),
             skipped=len(existing_ids),
@@ -728,6 +760,9 @@ class RecordWriter(AbstractPullWriter):
             entry = self.catalog.get(warp_record.item_id)
             new_item = Item.objects.create_from_catalog(entry=entry, name=warp_record.item_name)
             self.items[new_item.item_id] = new_item
+            warp_logger.info(
+                "Created item %s with itemID %s", warp_record.item_name, warp_record.item_id
+            )
             return new_item
 
     def _get_banner(self, gacha_id: str, gacha_type: str):
@@ -737,6 +772,7 @@ class RecordWriter(AbstractPullWriter):
         else:
             banner = Banner.objects.create(gacha_id=gacha_id, gacha_type=gacha_type)
             self.banners[gacha_id] = banner
+            warp_logger.info("Created banner with id %s for gacha type %s", gacha_id, gacha_type)
             return banner
 
 
@@ -784,6 +820,9 @@ class PetWriter(AbstractPullWriter):
                     )
                 )
             PetPull.objects.bulk_create(pulls)
+        pet_logger.info("Created %d new pet pulls", len(pulls))
+        pet_logger.info("Skipped %d existing pet pulls", len(existing_ids))
+        pet_logger.info("Created %d new pet variants", len(self.variants) - c_old_variants)
         return ImportResult(
             created=len(pulls),
             skipped=len(existing_ids),
@@ -808,6 +847,7 @@ class PetWriter(AbstractPullWriter):
         else:
             new_pet_type = PetType.objects.create(type_id=type_id, type_name=type_name)
             self.pet_types[type_id] = new_pet_type
+            pet_logger.info("Created pet type %s with id %s", type_name, type_id)
             return new_pet_type
 
     def _get_pet(self, record: PetRecord) -> Pet:
@@ -826,17 +866,22 @@ class PetWriter(AbstractPullWriter):
             if not pet.name and record.chroma_appearance_id == ChromaAppearance.NORMAL:
                 pet.name = record.item_name
                 pet.save(update_fields=["name"])
+                pet_logger.debug("Set pet name for %s to %s", record.pet_id, record.item_name)
             return pet
         else:
-            new_pet = Pet.objects.create(
-                name=record.item_name
+            pet_name = (
+                record.item_name
                 if str(record.chroma_appearance_id) == ChromaAppearance.NORMAL
-                else "",
+                else ""
+            )
+            new_pet = Pet.objects.create(
+                name=pet_name,
                 pet_id=record.pet_id,
                 item_id=record.item_id,
                 pet_type=pet_type,
             )
             self.pets[record.pet_id] = new_pet
+            pet_logger.info("Created pet with ID %s and name '%s'", record.pet_id, pet_name)
             return new_pet
 
     def _get_variant(self, record: PetRecord) -> PetVariant:
@@ -861,6 +906,12 @@ class PetWriter(AbstractPullWriter):
                 blind_box_sub_rarity=record.blind_box_sub_rarity,
             )
             self.variants[(pet.pet_id, record.chroma_appearance_id)] = new_pet_variant
+            pet_logger.info(
+                "Created pet variant %s with chroma appearance id %s for pet %s",
+                record.item_name,
+                record.chroma_appearance_id,
+                record.pet_id,
+            )
             return new_pet_variant
 
     def _get_pool(self, pool_id: str) -> PetPool:
@@ -879,4 +930,5 @@ class PetWriter(AbstractPullWriter):
         else:
             new_pool = PetPool.objects.create(pool_id=pool_id)
             self.pet_pools[pool_id] = new_pool
+            pet_logger.info("Created pet pool with pool ID %s", pool_id)
             return new_pool

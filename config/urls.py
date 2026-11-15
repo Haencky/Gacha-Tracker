@@ -17,14 +17,19 @@ Including another URLconf
 
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth.views import LogoutView
 from django.urls import include, path, re_path
 from django.views.static import serve
+
+from core.views import LoginView, setup
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
     path("hsr/", include("hsr.urls", namespace="hsr")),
-    path("accounts/", include("django.contrib.auth.urls")),
+    path("accounts/login/", LoginView.as_view(), name="login"),
+    path("accounts/logout/", LogoutView.as_view(), name="logout"),
+    path("accounts/setup/", setup, name="setup"),
 ]
 
 if settings.SERVE_MEDIA:

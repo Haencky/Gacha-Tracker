@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Setup" %} · Gacha Tracker{% endblock title %}
+{% block content %}
+    <div class="mx-auto mt-12 max-w-sm">
+        <div class="card bg-base-100 shadow-sm">
+            <form method="post" action="{% url 'setup' %}" class="card-body gap-4">
+                {% csrf_token %}
+                <h1 class="card-title text-2xl">{% translate "Create admin account" %}</h1>
+                <p class="text-sm opacity-70">
+                    {% translate "No account exists yet. The account you create here is used to log in to Gacha Tracker." %}
+                </p>
+                {% for error in form.non_field_errors %}
+                    <div role="alert" class="alert alert-error alert-soft">{{ error }}</div>
+                {% endfor %}
+                <fieldset class="fieldset">
+                    <label class="fieldset-legend" for="{{ form.username.id_for_label }}">{% translate "Username" %}</label>
+                    <input type="text"
+                           id="{{ form.username.id_for_label }}"
+                           name="{{ form.username.html_name }}"
+                           value="{{ form.username.value|default:'' }}"
+                           autocomplete="username"
+                           autocapitalize="none"
+                           required
+                           autofocus
+                           class="input w-full {% if form.username.errors %}input-error{% endif %}">
+                    {% for error in form.username.errors %}
+                        <p class="label text-error">{{ error }}</p>
+                    {% endfor %}
+                    <label class="fieldset-legend" for="{{ form.password1.id_for_label }}">{% translate "Password" %}</label>
+                    <input type="password"
+                           id="{{ form.password1.id_for_label }}"
+                           name="{{ form.password1.html_name }}"
+                           autocomplete="new-password"
+                           required
+                           class="input w-full {% if form.password1.errors %}input-error{% endif %}">
+                    {% for error in form.password1.errors %}
+                        <p class="label text-error">{{ error }}</p>
+                    {% endfor %}
+                    <label class="fieldset-legend" for="{{ form.password2.id_for_label }}">{% translate "Confirm password" %}</label>
+                    <input type="password"
+                           id="{{ form.password2.id_for_label }}"
+                           name="{{ form.password2.html_name }}"
+                           autocomplete="new-password"
+                           required
+                           class="input w-full {% if form.password2.errors %}input-error{% endif %}">
+                    {# mismatch and password validator errors (too short, too common, ...) end up on password2 #}
+                    {% for error in form.password2.errors %}
+                        <p class="label text-error whitespace-normal">{{ error }}</p>
+                    {% endfor %}
+                    {# help_text is a <ul> rendered by Django from AUTH_PASSWORD_VALIDATORS #}
+                    <div class="mt-1 text-xs opacity-60 [&_ul]:list-disc [&_ul]:pl-4">{{ form.password1.help_text|safe }}</div>
+                </fieldset>
+                <button type="submit" class="btn btn-primary w-full">{% translate "Create account" %}</button>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

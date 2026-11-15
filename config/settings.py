@@ -25,7 +25,10 @@ env.read_env(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.get_value("SECRET_KEY", str)
+SECRET_KEY = env.get_value("SECRET_KEY", str, default="")
+# in the container the entrypoint generates the key into this file when SECRET_KEY is not set
+if not SECRET_KEY and (secret_key_file := env.get_value("SECRET_KEY_FILE", str, default="")):
+    SECRET_KEY = Path(secret_key_file).read_text().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get_value("DEBUG", bool, default=False)
@@ -167,6 +170,7 @@ MAILERS = {
     },
 }
 
+SILENCED_SYSTEM_CHECKS = ["mail.E001"]  # app does not send emails
 LOG_LEVEL = env.get_value("LOG_LEVEL", str, default="INFO")
 LOGGING = {
     "version": 1,

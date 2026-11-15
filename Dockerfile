@@ -30,6 +30,7 @@ RUN SECRET_KEY=build-only python manage.py collectstatic --noinput
 
 ENV MEDIA_ROOT=/data/media
 ENV DATABASE_URL=sqlite:////data/db.sqlite3
+ENV SECRET_KEY_FILE=/data/secret_key
 RUN mkdir -p /data
 
 RUN useradd --create-home app

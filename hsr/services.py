@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 import requests
@@ -30,6 +31,10 @@ ITEM_IMAGE_PATHS = {
 }
 
 ATTRIBUTE_IMAGE_PATHS = {Path: "icon/path/{name}.webp", DamageType: "icon/element/{name}.webp"}
+
+image_logger = logging.getLogger(f"{__name__}.images")
+assign_items_logger = logging.getLogger(f"{__name__}.assign_items")
+pity_logger = logging.getLogger(f"{__name__}.pity")
 
 
 @dataclass
@@ -103,8 +108,12 @@ def _fetch_attribute_icon(attribute: type[AbstractAttribute]) -> ServiceCount:
         try:
             response = requests.get(icon_url, timeout=10)
             response.raise_for_status()
-        except requests.RequestException:
+            image_logger.debug("Fetched attribute icon on %s", icon_url)
+        except requests.RequestException as err:
             failed += 1
+            image_logger.warning(
+                "Failed to fetch attribute icon on url %s (%s)", icon_url, str(err)
+            )
             continue
         e.icon.save(name=f"{e.name}.png", content=ContentFile(response.content), save=True)
     return ServiceCount(success=(len(entries) - failed), fail=failed)
@@ -131,8 +140,12 @@ def _fetch_item_images(catalog, kind: str) -> ServiceCount:
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
-        except requests.RequestException:
+            image_logger.debug("Fetched item image for kind %s on url %s", kind, url)
+        except requests.RequestException as err:
             failed += 1
+            image_logger.warning(
+                "Failed to fetch item image for kind %s on url %s (%s)", kind, url, str(err)
+            )
             continue
         getattr(i, kind).save(
             name=f"{i.item_id}.png", content=ContentFile(response.content), save=True
@@ -147,12 +160,22 @@ def download_missing_images(catalog) -> ImageDownloadResult:
     Returns:
         result(ImageDownloadResult): custom object containing count for success and fails
     """
-    return ImageDownloadResult(
+    result = ImageDownloadResult(
         item_icons=_fetch_item_images(catalog, "icon"),
         item_portraits=_fetch_item_images(catalog, "portrait"),
         path=_fetch_attribute_icon(Path),
         dtype=_fetch_attribute_icon(DamageType),
     )
+    if result.item_icons.success:
+        image_logger.info("Fetched %d item icons", result.item_icons.success)
+    if result.item_portraits.success:
+        image_logger.info("Fetched %d item portraits", result.item_portraits.success)
+    if result.path.success:
+        image_logger.info("Fetched %d path icons", result.path.success)
+    if result.dtype.success:
+        image_logger.info("Fetched %d damage type icons", result.dtype.success)
+
+    return result
 
 
 def assign_featured_items() -> ServiceCount:
@@ -172,9 +195,19 @@ def assign_featured_items() -> ServiceCount:
         if featured:
             b.featured_item = featured.item
             b.save()
+            assign_items_logger.info(
+                "Assigned item %s (%s) to banner %s",
+                featured.item.name,
+                featured.item.item_id,
+                b.gacha_id,
+            )
         else:
             failed += 1
-    return ServiceCount(success=len(missing) - failed, fail=failed)
+            assign_items_logger.debug("Failed to assign an item to banner %s", b.gacha_id)
+    s = len(missing) - failed
+    if s:
+        assign_items_logger.info("Assigned %s items to banner", s)
+    return ServiceCount(success=s, fail=failed)
 
 
 def recalculate_pity() -> None:
@@ -221,3 +254,4 @@ def recalculate_pity() -> None:
 
     with transaction.atomic():
         Warp.objects.bulk_update(updated, ["pity", "fifty_fifty", "featured_pity"], batch_size=500)
+    pity_logger.info("Recalculated pity")

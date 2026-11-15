@@ -510,7 +510,7 @@ class ApiParser(AbstractParser):
 
         time_offset = data["region_time_zone"]
         entries = data["list"]
-        warp_logger.info("Fetched %d warps for gacha type %d", len(entries), gacha_type)
+        warp_logger.info("Fetched %d warps for gacha type %s", len(entries), gacha_type)
 
         return [
             WarpRecord(
@@ -735,10 +735,12 @@ class RecordWriter(AbstractPullWriter):
                     )
                 )
             Warp.objects.bulk_create(warps)
-        warp_logger.info("Created %d warps", len(warps))
-        warp_logger.info("Skipped %d existing entries", len(existing_ids))
-        warp_logger.info("Created %d new items", len(self.items) - c_old_items)
-        warp_logger.warning("Received %d unknown items", len(unknown_items))
+        warp_logger.info(
+            "Import finished: %d created, %d skipped, %d new items",
+            len(warps),
+            len(existing_ids),
+            len(self.items) - c_old_items,
+        )
         return ImportResult(
             created=len(warps),
             skipped=len(existing_ids),
@@ -820,9 +822,12 @@ class PetWriter(AbstractPullWriter):
                     )
                 )
             PetPull.objects.bulk_create(pulls)
-        pet_logger.info("Created %d new pet pulls", len(pulls))
-        pet_logger.info("Skipped %d existing pet pulls", len(existing_ids))
-        pet_logger.info("Created %d new pet variants", len(self.variants) - c_old_variants)
+        pet_logger.info(
+            "Import finished: %d created, %d skipped, %d new variants",
+            len(pulls),
+            len(existing_ids),
+            len(self.variants) - c_old_variants,
+        )
         return ImportResult(
             created=len(pulls),
             skipped=len(existing_ids),

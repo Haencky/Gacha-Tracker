@@ -60,7 +60,6 @@ def _finish_import(request, result: ImportResult):
     )
     if s_icons := donwload.item_icons.success:
         messages.success(request, f"Downloaded {s_icons} icons")
-
     if f_icons := donwload.item_icons.fail:
         messages.error(request, f"Failed to download {f_icons} icons")
     if s_portraits := donwload.item_portraits.success:
@@ -142,7 +141,7 @@ def import_api_view(request):
                 result = writer.write(parser.fetch())
             except RateLimitError:
                 messages.error(request, "Visited to frequently")
-                logger.exception("Visited to frequently")
+                logger.warning("Visited too frequently")
             except AuthkeyTimeoutError:
                 messages.warning(request, _("Authkey is too old"))
             except AuthkeyError:
@@ -150,9 +149,6 @@ def import_api_view(request):
             except ApiError as e:
                 messages.error(request, f"{e.retcode} ({str(e)})")
                 logger.exception("API error %s:%s", e.retcode, e)
-            except ItemCatalogItemDoesNotExistError as e:
-                messages.error(request, str(e))
-                logger.exception("Iteme catalog error %s", str(e))
             else:
                 _finish_import(request, result)
 

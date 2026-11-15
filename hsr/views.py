@@ -10,6 +10,7 @@ from django.db.models.functions import Least
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from django.views import generic
 
 from core.services.stats import Stats, get_stats
@@ -45,35 +46,52 @@ def _finish_import(request, result: ImportResult):
     if result.created > 0:
         messages.success(
             request,
-            f"Imported {result.created}, New items: {result.new_items}",
+            _("Imported pulls: %(created)d, New items: %(items)d")
+            % {"created": result.created, "items": result.new_items},
         )
     if result.unknown_items:
-        messages.warning(request, f"Unknown items: {result.unknown_items}")
+        messages.warning(request, _("Unknown items: %(count)d") % {"count": result.unknown_items})
     assignment = assign_featured_items()
     recalculate_pity()
     if assignment.success:
-        messages.success(request, f"Successfully assigned {assignment.success} items")
+        messages.success(
+            request,
+            ngettext(
+                "Successfully assigned %(items)d item",
+                "Successfully assigned %(items)d items",
+                assignment.success,
+            )
+            % {"items": assignment.success},
+        )
     if assignment.fail:
-        messages.warning(request, f"Failed to assign {assignment.fail} items")
+        messages.warning(
+            request,
+            ngettext(
+                "Failed to assign %(items)d item",
+                "Failed to assign %(items)d items",
+                assignment.fail,
+            )
+            % {"items": assignment.fail},
+        )
     donwload = download_missing_images(
         catalog=cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
     )
-    if s_icons := donwload.item_icons.success:
-        messages.success(request, f"Downloaded {s_icons} icons")
-    if f_icons := donwload.item_icons.fail:
-        messages.error(request, f"Failed to download {f_icons} icons")
-    if s_portraits := donwload.item_portraits.success:
-        messages.success(request, f"Downloaded  {s_portraits} portraits")
-    if f_portraits := donwload.item_portraits.fail:
-        messages.error(request, f"Failed to download {f_portraits} portraits")
-    if s_dtypes := donwload.dtype.success:
-        messages.success(request, f"Downloaded {s_dtypes} damage type icons")
-    if f_dtype := donwload.dtype.fail:
-        messages.error(request, f"Failed to download {f_dtype} damage type icons")
-    if s_path := donwload.path.success:
-        messages.success(request, f"Downloaded {s_path} path icons")
-    if f_path := donwload.path.fail:
-        messages.error(request, f"Failed to download {f_path} path icons")
+    failed = 0
+    failed += donwload.dtype.fail
+    failed += donwload.path.fail
+    failed += donwload.item_portraits.fail
+    failed += donwload.item_icons.fail
+
+    if failed > 0:
+        messages.warning(
+            request,
+            ngettext(
+                "Failed to download %(count)d image. See logs for details.",
+                "Failed to download %(count)d images. See logs for details.",
+                failed,
+            )
+            % {"count": failed},
+        )
 
 
 def _render_import(
@@ -140,7 +158,7 @@ def import_api_view(request):
                 writer = RecordWriter(cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600))
                 result = writer.write(parser.fetch())
             except RateLimitError:
-                messages.error(request, "Visited to frequently")
+                messages.error(request, _("Visited too frequently"))
                 logger.warning("Visited too frequently")
             except AuthkeyTimeoutError:
                 messages.warning(request, _("Authkey is too old"))
@@ -156,7 +174,7 @@ def import_api_view(request):
                 pet_writer = PetWriter()
                 pet_result = pet_writer.write(pet_parser.fetch())
             except RateLimitError:
-                messages.error(request, "Visited to frequently")
+                messages.error(request, _("Visited too frequently"))
                 logger.exception("Visited to frequently")
             except AuthkeyTimeoutError:
                 messages.error(request, _("Authkey is too old"))
@@ -171,8 +189,15 @@ def import_api_view(request):
                 messages.error(request, _("Unable to fetch UID"))
                 logger.exception("Unable to get UID from pull history")
             else:
-                messages.success(request, f"Created pets: {pet_result.new_items}")
-                messages.success(request, f"Imported pet pulls: {pet_result.created}")
+                if pet_result.created > 0:
+                    messages.success(
+                        request,
+                        _("Created pets: %(new_items)d") % {"new_items": pet_result.new_items},
+                    )
+                    messages.success(
+                        request,
+                        _("Imported pet pulls: %(created)d") % {"created": pet_result.created},
+                    )
                 return redirect("hsr:index")
             return _render_import(request, url_form=form, active_tab="api")
         else:

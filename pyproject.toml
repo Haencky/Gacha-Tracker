@@ -1,3 +1,17 @@
+[project]
+name = "gacha-tracker"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "django==6.1.1",
+    "django-environ==0.14.0",
+    "gunicorn==27.0.1",
+    "pillow==12.3.0",
+    "psycopg[binary]==3.3.6",
+    "requests==2.34.2",
+    "whitenoise==6.12.0",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py314"
@@ -17,3 +31,11 @@ addopts = "-ra"
 [tool.djlint]
 profile = "django"
 indent = 4
+
+[dependency-groups]
+dev = [
+    "djlint==1.46.1",
+    "pytest==9.1.1",
+    "pytest-django==4.14.0",
+    "ruff==0.16.8",
+]

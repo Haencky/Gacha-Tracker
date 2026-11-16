@@ -25,12 +25,16 @@ env.read_env(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.get_value("SECRET_KEY", str)
+SECRET_KEY = env.get_value("SECRET_KEY", str, default="")
+# in the container the entrypoint generates the key into this file when SECRET_KEY is not set
+if not SECRET_KEY and (secret_key_file := env.get_value("SECRET_KEY_FILE", str, default="")):
+    SECRET_KEY = Path(secret_key_file).read_text().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get_value("DEBUG", bool, default=False)
 
 ALLOWED_HOSTS = env.get_value("ALLOWED_HOSTS", list, default=["127.0.0.1", "localhost"])
+CSRF_TRUSTED_ORIGINS = env.get_value("CSRF_TRUSTED_ORIGINS", list, default=[])
 
 
 # Application definition
@@ -45,9 +49,10 @@ INSTALLED_APPS = [
     "core",
     "hsr",
 ]
-
+REQUIRE_LOGIN = env.get_value("REQUIRE_LOGIN", bool, default=True)
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -56,6 +61,13 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if REQUIRE_LOGIN:
+    MIDDLEWARE.append("django.contrib.auth.middleware.LoginRequiredMiddleware")
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "login"
 
 ROOT_URLCONF = "config.urls"
 
@@ -66,6 +78,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "core.context_processors.games",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -77,6 +90,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
@@ -121,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = env.get_value("TIME_ZONE", str, default="UTC")
 
 USE_I18N = True
 
@@ -137,8 +158,8 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
+MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
+SERVE_MEDIA = env.get_value("SERVE_MEDIA", bool, default=True)
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -146,5 +167,33 @@ MEDIA_ROOT = BASE_DIR / "media"
 MAILERS = {
     "default": {
         "BACKEND": "django.core.mail.backends.console.EmailBackend",
+    },
+}
+
+SILENCED_SYSTEM_CHECKS = ["mail.E001"]  # app does not send emails
+LOG_LEVEL = env.get_value("LOG_LEVEL", str, default="INFO")
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{asctime} {levelname:<8} {name:<24} {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "hsr": {"level": LOG_LEVEL},
+        "core": {"level": LOG_LEVEL},
     },
 }

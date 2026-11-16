@@ -1,0 +1,39 @@
+{% load i18n %}
+<div id="modal-content" class="modal-box">
+    <h3 class="text-lg font-bold">{% translate "Edit banner" %}</h3>
+    <form hx-post="{% url 'hsr:banner-edit' banner.pk %}"
+          hx-target="#modal-content"
+          hx-swap="outerHTML"
+          hx-disinherit="hx-target hx-swap"
+          class="mt-4 flex flex-col gap-2">
+        {% csrf_token %}
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">{{ form.name.label }}</legend>
+            {{ form.name }}
+            {% for error in form.name.errors %}
+                <p class="label text-error">{{ error }}</p>
+            {% endfor %}
+        </fieldset>
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">{{ form.featured_item.label }}</legend>
+            <div class="flex gap-2">
+                {{ form.featured_item }}
+                <a href="{% url 'hsr:item-add' %}"
+                   class="btn btn-square btn-outline"
+                   title="{% translate 'Add item' %}"
+                   aria-label="{% translate 'Add item' %}">+</a>
+            </div>
+            {% for error in form.featured_item.errors %}
+                <p class="label text-error">{{ error }}</p>
+            {% empty %}
+                <p class="label">{% translate "Missing an item? Add it first." %}</p>
+            {% endfor %}
+        </fieldset>
+        <div class="modal-action">
+            <button type="button"
+                    class="btn btn-ghost"
+                    onclick="this.closest('dialog').close()">{% translate "Cancel" %}</button>
+            <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+        </div>
+    </form>
+</div>

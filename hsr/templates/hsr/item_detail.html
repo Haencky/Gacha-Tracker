@@ -1,0 +1,90 @@
+{% extends "hsr/base.html" %}
+{% load static %}
+{% load i18n %}
+{% block title %}{{ item.name }}{% endblock title %}
+{% block content %}
+    <div class="grid gap-6 md:grid-cols-[auto_1fr]">
+        <div class="self-start md:sticky md:top-4">
+            {% include "hsr/partials/item_portrait.html" with item=item size="lg" only %}
+        </div>
+        <div class="flex flex-col gap-6">
+            <!--top area-->
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold">{{ item.name }}</h1>
+                    {% if item.name != item.eng_name %}
+                        <h2 class="text-lg opacity-60">{{ item.eng_name }}</h2>
+                    {% endif %}
+                </div>
+                {% if item.guide %}
+                    <a href="{{ item.guide }}"
+                       class="btn btn-sm btn-outline"
+                       target="_blank"
+                       rel="noopener">Guide ↗</a>
+                {% endif %}
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <!--badges-->
+                {% include "hsr/partials/badge_rarity.html" with rarity=item.rarity only %}
+                {% include "hsr/partials/badge_path.html" with path=item.path only %}
+                {% include "hsr/partials/badge_item_type.html" with item_type=item.item_type only %}
+            </div>
+            <div>
+                {% if count != 0 %}
+                    <!--pull info-->
+                    <div class="stats stats-vertical sm:stats-horizontal">
+                        <div class="stat bg-base-200 shadow">
+                            <div class="stat-title">{% translate "Pulled" %}</div>
+                            <div class="stat-value">{{ count }}</div>
+                            {% if warps.last.time %}
+                                <div class="stat-desc">{% translate "First:" %} {{ warps.last.time|date:"d.m.Y" }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="stat bg-base-200 shadow">
+                            <div class="stat-title">
+                                {% if item.item_type == "CHARACTER" %}Eidolon {% else %} {% translate "Superimposition" %}{% endif %}
+                            </div>
+                            <div class="stat-value">{% if item.item_type == "CHARACTER" %}E{{ eidolon }} {% else %}S{{ lvl }} {% endif %}</div>
+                        </div>
+                        {% if item.featured_pulls_total %}
+                            <div class="stat bg-base 200 shadow">
+                                <div class="stat-title">{% translate "Used pulls" %}</div>
+                                <div class="stat-value">{{ item.featured_pulls_total }}</div>
+                                {% if item.featured_pull_avg %}
+                                    <div class="stat-desc">{% translate "avg." %} {{ item.featured_pull_avg|floatformat:2 }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div>{% translate "Item not yet obtained" %}</div>
+                {% endif %}
+            </div>
+            {% if warps %}
+                <h2 class="text-xl font-semibold">Warps</h2>
+                <div>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra table-sm">
+                            <!-- head -->
+                            <thead>
+                                <tr>
+                                    <th>{% translate "Time" %}</th>
+                                    <th>{% if item.item_type == "CHARACTER" %}Eidolon {% else %} {% translate "Superimposition" %}{% endif %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for w in warps %}
+                                    <tr>
+                                        <td>{% if w.time %}{{ w.time|date:"d.m.Y H:i" }}{% else %}-{% endif %}</td>
+                                        <td>{% if w.item.item_type == "CHARACTER" %}{% if forloop.revcounter0 > 6 %} <div class="badge badge-ghost">+1</div>{% else %}E{{ forloop.revcounter0 }} {% endif %} {% else %} {% if forloop.revcounter0 > 5 %}<div class="badge badge-ghost">+1</div> {% else %}S{{ forloop.revcounter0|add:1 }}{% endif %}{% endif %}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="w-full"></div>
+{% endblock content %}

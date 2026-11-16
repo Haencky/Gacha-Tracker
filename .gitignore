@@ -224,3 +224,4 @@ db.sqlite3-shm
 /static/css/app.css
 staticfiles/
 media/
+compose.override.yaml

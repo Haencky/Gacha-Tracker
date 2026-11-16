@@ -1,0 +1,79 @@
+{% extends "hsr/base.html" %}
+{% load i18n %}
+{% load static %}
+{% block title %}Honkai: Star Rail · {{ block.super }}{% endblock title %}
+{% block content %}
+    <div>
+        <div class="mb-6 flex items-center justify-between gap-4">
+            <h1 class="text-2xl font-bold">Honkai: Star Rail</h1>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {% for t in types %}
+            {% if t.count %}
+                <div class="card card-side bg-base-100 shadow-sm">
+                    <figure class="w-32 shrink-0 bg-base-300">
+                        {% if t.last_win.portrait %}
+                            <img src="{{ t.last_win.portrait.url }}"
+                                 alt="{{ t.last_win.name }}"
+                                 class="h-full w-full object-cover"
+                                 loading="lazy">
+                        {% else %}
+                            {% include "hsr/partials/unknown_item.html" with item_type=t.item_type %}
+                        {% endif %}
+                    </figure>
+                    <div class="card-body gap-3 p-4">
+                        <div class="flex items-start justify-between gap-2">
+                            <h2 class="card-title text-base">{{ t.label }}</h2>
+                            {% include "hsr/partials/badge_pulls.html" with pulls=t.count %}
+                        </div>
+                        <div>
+                            <div class="flex items-baseline justify-between">
+                                <span class="text-xs uppercase opacity-60">{% translate "Pity" %}</span>
+                                <span>
+                                    <span class="text-xl font-bold">{{ t.current_pity }}</span>
+                                    <span class="opacity-60">/ {{ t.max_pity }}</span>
+                                </span>
+                            </div>
+                            <progress class="progress {% if t.guaranteed %}progress-success{% else %}progress-primary{% endif %} w-full"
+                                      value="{{ t.current_pity }}"
+                                      max="{{ t.max_pity }}"></progress>
+                            {% if t.guaranteed %}
+                                <span class="badge badge-success badge-sm mt-1">{% translate "Guaranteed" %}</span>
+                            {% endif %}
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <div class="text-xs opacity-60">{% translate "avg. pulls" %}</div>
+                                <div class="font-semibold">
+                                    {% if t.expected_pity is not None %}
+                                        {{ t.expected_pity|floatformat:1 }}
+                                    {% else %}
+                                        {% translate "No 5★ yet" %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if t.winrate is not None %}
+                                <div>
+                                    <div class="text-xs opacity-60">{% translate "50/50 won" %}</div>
+                                    <div class="font-semibold">
+                                        {{ t.winrate|floatformat:0 }} %
+                                        <span class="text-xs font-normal opacity-60">({{ t.success }}/{{ t.attempts_50_50 }})</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-actions mt-auto items-center justify-between text-sm">
+                            <span class="font-mono text-success inline-flex items-center gap-1">
+                                <img src='{% static "hsr/jade.png" %}'
+                                     alt='{% translate "Jade" %}'
+                                     class="size-[1.5em]" />
+                            {{ t.jade|floatformat:"0g" }}</span>
+                            <span class="opacity-60">{{ t.euro|floatformat:"2g" }} €</span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock content %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+{% block subnav %}
+    <nav class="navbar bg-base-100 border-t border-base-300 min-h-12">
+        <div class="navbar-start gap-1">
+            <a href='{% url "hsr:index" %}' class="btn btn-ghost btn-sm">
+                <img src='{% static "hsr/DailyQuestIcon.png" %}' alt="" class="h-7 w-auto" />
+                {% translate "Home" %}
+            </a>
+            <a href="{% url 'hsr:import-api' %}" class="btn btn-ghost btn-sm">{% translate "Import" %}</a>
+            <a href='{% url "hsr:item-overview" %}' class="btn btn-sm btn-ghost">
+                <img src='{% static "hsr/InventoryIcon.png" %}' alt="" class="h-7 w-auto" />
+                {% translate "Items" %}
+            </a>
+            <a href='{% url "hsr:banner-overview" 11 %}'
+               class="btn btn-sm btn-ghost">
+                <img src='{% static "hsr/DrawcardIcon.png" %}'
+                     alt='{% translate "Banner" %}'
+                     loading="lazy"
+                     class="h-7 w-auto" />
+            {% translate "Banner" %}</a>
+            <a href='{% url "hsr:pet-overview" 1 %}' class="btn btn-ghost btn-sm">
+                <img src='{% static "hsr/Icon_Pet.webp" %}' alt="" class="h-7 w-auto" />
+                {% translate "Pets" %}
+            </a>
+        </div>
+        <div class="navbar-end mr-2">
+            <div class="dropdown dropdown-end">
+                <div>
+                    <label class="input">
+                        <svg class="h-[1em] opacity-50"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24">
+                            <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path>
+                            </g>
+                        </svg>
+                        <input type="search"
+                               required
+                               placeholder='{% translate "Search item..." %}'
+                               name="q"
+                               hx-get="{% url 'hsr:item-search' %}"
+                               hx-trigger="input changed delay:300ms, search"
+                               hx-target="#search-results" />
+                    </label>
+                </div>
+                <div class="dropdown-content" tabindex="-1" id="search-results"></div>
+            </div>
+        </div>
+    </nav>
+{% endblock subnav %}

@@ -1,0 +1,41 @@
+{% load i18n %}
+{% load static %}
+{% if items %}
+    <ul class="menu w-full max-h-96 flex-nowrap overflow-y-auto bg-base-100 rounded-box shadow-lg">
+        {% for item in items %}
+            <li>
+                <a href="{% url 'hsr:item-detail' item.item_id %}"
+                   class="flex items-center gap-3">
+                    <div class="avatar shrink-0">
+                        <div class="mask mask-squircle size-8 {% if item.rarity == 5 %}bg-warning/30{% elif item.rarity == 4 %}bg-secondary/30{% else %}bg-info/30{% endif %}">
+                            {% if item.item_type == "LIGHT CONE" and item.icon %}
+                                <img src="{{ item.icon.url }}" alt="" loading="lazy" />
+                            {% elif item.icon %}
+                                <img src="{{ item.icon.url }}" alt="" loading="lazy" />
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="truncate font-semibold">{{ item.name }}</div>
+                        {% if item.name != item.eng_name %}
+                            <div class="truncate text-xs opacity-60">{{ item.eng_name }}</div>
+                        {% endif %}
+                    </div>
+                    {% if item.item_type == "CHARACTER" %}
+                        <img src='{% static "hsr/AvatarIcon.png" %}'
+                             alt="Character"
+                             loading="lazy"
+                             class="size-7" />
+                    {% else %}
+                        <img src='{% static "hsr/Icon_Light_Cone.webp" %}'
+                             alt="Light Cone"
+                             loading="lazy"
+                             class="size-7" />
+                    {% endif %}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% elif items is not None %}
+    <p class="p-4 text-sm opacity-60 bg-base-100 rounded-box shadow-lg">{% translate "No items found" %}</p>
+{% endif %}

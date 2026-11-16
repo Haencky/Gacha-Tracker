@@ -1,0 +1,37 @@
+{% extends "hsr/base.html" %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+    <!--tab links-->
+    <div class="tabs tabs-border mt-6">
+        {% for t in tabs %}
+            <a role="tab"
+               class="tab {% if t == gacha_type %}tab-active{% endif %}"
+               href='{% url "hsr:banner-overview" t %}'
+               {% if t == gacha_type %}aria-selected="true"{% endif %}>{{ t.label }}</a>
+        {% endfor %}
+    </div>
+    <!--content-->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-6">
+        {% for b in banner %}
+            <a href='{% url "hsr:banner-detail" b.gacha_id %}'
+               class="card bg-base-100 shadow-sm ring-2 {% if b.featured_pulls %} ring-success {% else %} ring-error {% endif %}">
+                <figure>
+                    {% if b.featured_item.portrait %}
+                        {% include "hsr/partials/item_portrait.html" with item=b.featured_item hide=True only %}
+                    {% else %}
+                        {% include "hsr/partials/unknown_item.html" with item_type=item_type only %}
+                    {% endif %}
+                </figure>
+                <div class="card-body p-3 gap-2 flex-1">
+                    <div class="card-actions justify-between mt-auto inline-flex">
+                        <div class="badge {% if not b.featured_pulls and not b.lost %} badge-info {% elif not b.featured_pulls %}badge-error {% elif b.featured_pulls and b.lost %} badge-warning{% else %} badge-success {% endif %}">
+                            {{ b.featured_pulls }}/{{ b.featured_pulls|add:b.lost }}
+                        </div>
+                        {% include "hsr/partials/badge_pulls.html" with pulls=b.pulls %}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endblock content %}

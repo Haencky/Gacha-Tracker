@@ -8,6 +8,7 @@
         <title>{% block title %}Gacha Tracker{% endblock title %}</title>
         <link rel="stylesheet" href="{% static 'css/app.css' %}">
         <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+        <script src="{% static 'js/copy.js' %}" defer></script>
         {% block head %}
         {% endblock head %}
     </head>
@@ -26,15 +27,22 @@
                     {% for game in games %}
                         <li>
                             <a href="{% url game.url_name %}"
-                               {% if game.slug == current_game %}class="menu-active" aria-current="page"{% endif %}>{{ game.name }}</a>
+                               {% if game.slug == current_game %}class="menu-active" aria-current="page"{% endif %}>{{ game.verbose_name }}</a>
                         </li>
                     {% endfor %}
                 </ul>
+                {% if user.is_authenticated %}
+                    <form method="post" action='{% url "logout" %}'>
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-ghost">{% translate "Logout" %}</button>
+                    </form>
+                {% endif %}
             </nav>
-            <div class="navbar-end">
-                <a class="btn btn-primary btn-sm" href="{% url 'core:import' %}">{% translate "Import" %}</a>
-            </div>
         </header>
+        <div>
+            {% block subnav %}
+            {% endblock subnav %}
+        </div>
         <div id="messages"
              class="toast toast-top toast-end z-50"
              aria-live="polite">{% include "partials/messages.html" %}</div>
@@ -46,6 +54,12 @@
               class="htmx-indicator loading loading-spinner loading-md fixed bottom-4 right-4"
               role="status"
               aria-label="{% translate 'Loading' %}"></span>
+        <dialog id="modal" class="modal">
+            <div id="modal-content" class="modal-box"></div>
+            <form method="dialog" class="modal-backdrop">
+                <button type="">{% translate "Close" %}</button>
+            </form>
+        </dialog>
         {% block scripts %}
         {% endblock scripts %}
     </body>

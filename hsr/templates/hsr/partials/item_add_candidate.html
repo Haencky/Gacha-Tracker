@@ -1,0 +1,16 @@
+{% load i18n %}
+{% for item in items %}
+    <button type="submit"
+            name="item_id"
+            value="{{ item.item_id }}"
+            class="card bg-base-200 p-2 gap-2 items-center hover:bg-base-300 transition-colors">
+        <img src="{{ item.image_url }}"
+             alt="{{ item.name }}"
+             loading="lazy"
+             class="size-16 rounded-box" />
+        <span class="text-sm font-semibold text-center line-clamp-2">{{ item.name }}</span>
+        <span class="text-xs opacity-60">{{ item.rarity }}★</span>
+    </button>
+{% empty %}
+    <p class="col-span-full opacity-60">{% translate "No items found" %}</p>
+{% endfor %}

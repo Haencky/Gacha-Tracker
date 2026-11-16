@@ -1,0 +1,19 @@
+{% load static %}
+<span class="badge {{ variant|default:'badge-outline' }} badge-lg gap-1 {{ extra_class }}">
+    {% if rarity == 3 %}
+        <img src="{% static 'hsr/Star3.png' %}"
+             alt="★★★"
+             loading="lazy"
+             class="h-5 w-auto" />
+    {% elif rarity == 4 %}
+        <img src="{% static 'hsr/Star4.png' %}"
+             alt="★★★★"
+             loading="lazy"
+             class="h-5 w-auto" />
+    {% elif rarity == 5 %}
+        <img src='{% static "hsr/Star5.png" %}'
+             alt="★★★★★"
+             loading="lazy"
+             class="h-5 w-auto" />
+    {% endif %}
+</span>

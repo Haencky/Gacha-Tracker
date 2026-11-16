@@ -1,0 +1,770 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-16 14:30+0100\n"
+"PO-Revision-Date: 2026-11-16 14:35+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.10\n"
+
+#: .\core\models.py:49
+msgid "Item ID"
+msgstr ""
+
+#: .\core\models.py:49
+msgid "Unique ID"
+msgstr "Eindeutige ID"
+
+#: .\core\models.py:51 .\core\models.py:143 .\hsr\models.py:127
+#: .\hsr\models.py:255
+msgid "Name"
+msgstr "Name"
+
+#: .\core\models.py:51
+msgid "Name of item"
+msgstr "Name des Items"
+
+#: .\core\models.py:53
+msgid "English Name"
+msgstr "Englischer Name"
+
+#: .\core\models.py:53
+msgid "English Name of item"
+msgstr "Englischer Name des Items"
+
+#: .\core\models.py:55 .\hsr\templates\hsr\item_overview.html:48
+#, fuzzy
+msgid "Rarity"
+msgstr "Seltenheit"
+
+#: .\core\models.py:55
+#, fuzzy
+msgid "Rarity of item"
+msgstr "Seltenheit des Items"
+
+#: .\core\models.py:60
+msgid "Item Portrait"
+msgstr "Item-Portrait"
+
+#: .\core\models.py:61
+msgid "Image to be displayed"
+msgstr "Portrait zum Abbilden"
+
+#: .\core\models.py:67
+msgid "Item Icon"
+msgstr "Item-Icon"
+
+#: .\core\models.py:68
+msgid "Small icon to be displayed"
+msgstr "Icon des Items"
+
+#: .\core\models.py:70
+msgid "Guide"
+msgstr "Guide"
+
+#: .\core\models.py:70
+msgid "Link to build guide"
+msgstr "Link zum guide"
+
+#: .\core\models.py:90
+msgid "Pull id"
+msgstr "Pull-ID"
+
+#: .\core\models.py:92 .\hsr\models.py:340
+msgid "UID"
+msgstr "UID"
+
+#: .\core\models.py:92
+msgid "User connected to this pull"
+msgstr "Account der den Pull gemacht hat"
+
+#: .\core\models.py:96 .\hsr\models.py:146 .\hsr\models.py:176
+msgid "Gacha Type"
+msgstr "Gacha-Type"
+
+#: .\core\models.py:97
+#, fuzzy
+msgid "Identifier of the gacha pool, defined by the game"
+msgstr "Pool identifier (vom Spiel vergeben)"
+
+#: .\core\models.py:100 .\hsr\models.py:335
+#: .\hsr\templates\hsr\banner_detail.html:135
+#: .\hsr\templates\hsr\item_detail.html:71
+msgid "Time"
+msgstr "Zeit"
+
+#: .\core\models.py:100
+msgid "Timestamp pull was made"
+msgstr "Zeitstempel"
+
+#: .\core\models.py:105
+msgid "Item obtained in pull"
+msgstr "Item, das im Pull gezogen wurde"
+
+#: .\core\models.py:106 .\hsr\models.py:103 .\hsr\models.py:132
+#: .\hsr\templates\hsr\banner_detail.html:136
+#, fuzzy
+msgid "Item"
+msgstr "Item"
+
+#: .\core\models.py:144
+msgid "Name of attribute"
+msgstr "Name des Attributes"
+
+#: .\core\models.py:148 .\core\models.py:149
+msgid "Attribute icon"
+msgstr "Attribut Icon"
+
+#: .\hsr\choices.py:11 .\hsr\templates\hsr\partials\badge_item_type.html:12
+msgid "Character"
+msgstr "Figur"
+
+#: .\hsr\choices.py:12 .\hsr\templates\hsr\partials\badge_item_type.html:21
+msgid "Light Cone"
+msgstr "Lichtkegel"
+
+#: .\hsr\choices.py:16
+msgid "Stellar Warp"
+msgstr "Stellarwarp"
+
+#: .\hsr\choices.py:17
+msgid "Departure Warp"
+msgstr "Startwarp"
+
+#: .\hsr\choices.py:18
+msgid "Character Event Warp"
+msgstr "Figuren-Aktionswarp"
+
+#: .\hsr\choices.py:19
+msgid "Light Cone Event Warp"
+msgstr "Lichtkegel-Aktionswarp"
+
+#: .\hsr\choices.py:20
+msgid "Character Collaboration Warp"
+msgstr "Figuren-Kollaborationswarp"
+
+#: .\hsr\choices.py:21
+msgid "Light Cone Collaboration Warp"
+msgstr "Lichtkegel-Kollaborationswarp"
+
+#: .\hsr\choices.py:25
+msgid "Won"
+msgstr "Gewonnen"
+
+#: .\hsr\choices.py:26
+msgid "Lost"
+msgstr "Verloren"
+
+#: .\hsr\choices.py:27 .\hsr\templates\hsr\index.html:42
+msgid "Guaranteed"
+msgstr "Garantiert"
+
+#: .\hsr\choices.py:28
+msgid "-"
+msgstr "-"
+
+#: .\hsr\choices.py:32
+msgid "Normal"
+msgstr "Normal"
+
+#: .\hsr\choices.py:33
+msgid "Collector"
+msgstr "Sammler"
+
+#: .\hsr\forms.py:27
+msgid "No authkey provided"
+msgstr "Kein Authkey angegeben"
+
+#: .\hsr\forms.py:41
+msgid "Invalid db file"
+msgstr "Ungültige DB-Datei"
+
+#: .\hsr\forms.py:53
+msgid "Featured item"
+msgstr "Featured Item"
+
+#: .\hsr\models.py:19 .\hsr\models.py:75
+msgid "Path"
+msgstr "Pfad"
+
+#: .\hsr\models.py:20 .\hsr\templates\hsr\item_overview.html:63
+msgid "Paths"
+msgstr "Pfade"
+
+#: .\hsr\models.py:30 .\hsr\models.py:83
+msgid "Damage Type"
+msgstr "Element"
+
+#: .\hsr\models.py:31
+msgid "Damage Types"
+msgstr "Elemente"
+
+#: .\hsr\models.py:76
+msgid "Path of item (e.g. 'Nihility' for 'Acheron')"
+msgstr "Pfad des Items (z.B. \"Nihility\" für \"Acheron\")"
+
+#: .\hsr\models.py:84
+msgid "Damage Type of character (e.g. wind)"
+msgstr "Element der Figur (z.B. \"Wind\")"
+
+#: .\hsr\models.py:94 .\hsr\templates\hsr\item_overview.html:33
+msgid "Item Type"
+msgstr "Itemtyp"
+
+#: .\hsr\models.py:95
+msgid "Character or Light Cone"
+msgstr "Figur oder Lichtkegel"
+
+#: .\hsr\models.py:104 .\hsr\templates\hsr\banner_detail.html:108
+#: .\hsr\templates\hsr\base.html:14
+msgid "Items"
+msgstr "Items"
+
+#: .\hsr\models.py:127
+msgid "Banner name"
+msgstr "Bannername"
+
+#: .\hsr\models.py:133
+msgid "Featured item obtain(able) on the banner"
+msgstr "Featured Item des Banners"
+
+#: .\hsr\models.py:140
+msgid "Gacha ID"
+msgstr "Gacha-ID"
+
+#: .\hsr\models.py:141
+msgid "Gacha ID provided by HoYos API"
+msgstr "Gacha-ID (von HoYos API vergeben)"
+
+#: .\hsr\models.py:147
+msgid "Banner type the banner belongs to"
+msgstr ""
+
+#: .\hsr\models.py:152 .\hsr\models.py:170 .\hsr\templates\hsr\base.html:19
+#: .\hsr\templates\hsr\base.html:22
+msgid "Banner"
+msgstr "Banner"
+
+#: .\hsr\models.py:153
+msgid "Banners"
+msgstr "Banner"
+
+#: .\hsr\models.py:171
+msgid "Banner pull was made"
+msgstr "Banner, auf dem der Pull gemacht wurde"
+
+#: .\hsr\models.py:177
+msgid "Identifier of the gacha pool (e.g. 1 for Stellar Warp)"
+msgstr "Kennung des Gacha Pools (z.B. 1 für Stellarwarp)"
+
+#: .\hsr\models.py:182 .\hsr\templates\hsr\banner_detail.html:80
+#: .\hsr\templates\hsr\banner_detail.html:137 .\hsr\templates\hsr\index.html:32
+msgid "Pity"
+msgstr "Pity"
+
+#: .\hsr\models.py:182
+msgid "pull pity (1-xx)"
+msgstr "Pull pity (1-xx)"
+
+#: .\hsr\models.py:190
+msgid "Fifty Fifty"
+msgstr "Fifty Fifty"
+
+#: .\hsr\models.py:191
+msgid "Info about fifty fifty won or loss"
+msgstr "Info, ob 50/50 gewonnen oder verloren wurde"
+
+#: .\hsr\models.py:195
+msgid "Featured pity"
+msgstr "Featured Pity"
+
+#: .\hsr\models.py:196
+msgid "Pity required for featured item"
+msgstr "Pity bis zum Featured item"
+
+#: .\hsr\models.py:210
+msgid "Warp"
+msgstr "Warp"
+
+#: .\hsr\models.py:211 .\hsr\templates\hsr\banner_detail.html:130
+msgid "Warps"
+msgstr "Warps"
+
+#: .\hsr\models.py:222
+msgid "Type ID"
+msgstr "Type ID"
+
+#: .\hsr\models.py:222
+msgid "Type identifier"
+msgstr ""
+
+#: .\hsr\models.py:225
+msgid "Type Name"
+msgstr "Typname"
+
+#: .\hsr\models.py:229 .\hsr\models.py:270
+msgid "Pet Type"
+msgstr "Haustiertyp"
+
+#: .\hsr\models.py:230
+msgid "Pet Types"
+msgstr "Haustiertypen"
+
+#: .\hsr\models.py:238
+msgid "Pool ID"
+msgstr "Pool ID"
+
+#: .\hsr\models.py:241
+msgid "Pet Pool"
+msgstr "Haustierpool"
+
+#: .\hsr\models.py:242
+msgid "Pet Pools"
+msgstr "Haustierpools"
+
+#: .\hsr\models.py:255
+msgid "Pet Name (default)"
+msgstr "Haustiername (normal)"
+
+#: .\hsr\models.py:258
+msgid "Pet ID"
+msgstr "Haustier-ID"
+
+#: .\hsr\models.py:260
+msgid "Unique Pet identifier"
+msgstr "Eindeutige Pet ID"
+
+#: .\hsr\models.py:264 .\hsr\models.py:266
+msgid "Unique item identifier"
+msgstr "Eindeutiger Item ID"
+
+#: .\hsr\models.py:274 .\hsr\models.py:289
+msgid "Pet"
+msgstr "Haustier"
+
+#: .\hsr\models.py:275 .\hsr\templates\hsr\base.html:25
+msgid "Pets"
+msgstr "Haustiere"
+
+#: .\hsr\models.py:290
+msgid "Reference to pet"
+msgstr "Referenz zum Haustier"
+
+#: .\hsr\models.py:293
+msgid "Variant name"
+msgstr "Variantenname"
+
+#: .\hsr\models.py:295
+msgid "Chroma ID"
+msgstr "Chroma ID"
+
+#: .\hsr\models.py:296
+msgid "Defines if normal or collector"
+msgstr "Angabe, ob normal oder Sammler"
+
+#: .\hsr\models.py:302
+msgid "Sub Rarity"
+msgstr "Sub Rarity"
+
+#: .\hsr\models.py:303
+msgid "Sub rarity in blind box"
+msgstr "Sub rarity in blind box"
+
+#: .\hsr\models.py:307
+msgid "Portrait"
+msgstr "Portrait"
+
+#: .\hsr\models.py:311
+msgid "Icon"
+msgstr "Icon"
+
+#: .\hsr\models.py:315 .\hsr\models.py:338
+msgid "Pet Variant"
+msgstr "Haustiervariante"
+
+#: .\hsr\models.py:316
+msgid "Pet Variants"
+msgstr "Haustiervarianten"
+
+#: .\hsr\models.py:333
+msgid "ID"
+msgstr "ID"
+
+#: .\hsr\models.py:333
+msgid "Pet Pull ID"
+msgstr "Haustier-Pull-ID"
+
+#: .\hsr\models.py:336
+msgid "Pool"
+msgstr "Pool"
+
+#: .\hsr\models.py:340
+msgid "Account identifier"
+msgstr "Account Identifier"
+
+#: .\hsr\models.py:343
+msgid "Pet Pull"
+msgstr "Haustierpull"
+
+#: .\hsr\models.py:344
+msgid "Pet Pulls"
+msgstr "Haustierpulls"
+
+#: .\hsr\templates\hsr\banner_detail.html:10
+#: .\hsr\templates\hsr\banner_detail.html:35
+msgid "Unknown Banner"
+msgstr "Unbekanntes Banner"
+
+#: .\hsr\templates\hsr\banner_detail.html:43
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: .\hsr\templates\hsr\banner_detail.html:56
+msgid "Lost 50/50, then obtained"
+msgstr "50/50 verloren, danach erhalten"
+
+#: .\hsr\templates\hsr\banner_detail.html:58
+msgid "Featured obtained"
+msgstr "Featured Item erhalten"
+
+#: .\hsr\templates\hsr\banner_detail.html:60
+msgid "Lost 50/50"
+msgstr "50/50 verloren"
+
+#: .\hsr\templates\hsr\banner_detail.html:62 .\hsr\templates\hsr\index.html:52
+msgid "No 5★ yet"
+msgstr "Noch kein 5★"
+
+#: .\hsr\templates\hsr\banner_detail.html:70
+msgid "Pulls"
+msgstr "Pulls"
+
+#: .\hsr\templates\hsr\banner_detail.html:73
+#: .\hsr\templates\hsr\item_detail.html:40
+msgid "First:"
+msgstr "Erste:"
+
+#: .\hsr\templates\hsr\banner_detail.html:87
+msgid "Char"
+msgstr "Char"
+
+#: .\hsr\templates\hsr\banner_detail.html:87
+msgid "LC"
+msgstr "LC"
+
+#: .\hsr\templates\hsr\base.html:9
+msgid "Home"
+msgstr "Home"
+
+#: .\hsr\templates\hsr\base.html:11 .\hsr\templates\hsr\import.html:3
+msgid "Import"
+msgstr "Importieren"
+
+#: .\hsr\templates\hsr\base.html:42 .\hsr\templates\hsr\item_add.html:10
+msgid "Search item..."
+msgstr "Item suchen..."
+
+#: .\hsr\templates\hsr\import.html:6
+msgid "Import Warps"
+msgstr "Warps importieren"
+
+#: .\hsr\templates\hsr\import.html:11
+msgid "URL"
+msgstr "URL"
+
+#: .\hsr\templates\hsr\import.html:17
+msgid "Import your warp history directly from the HoYoverse API."
+msgstr "Importiere deine Warp-Historie von HoYos API."
+
+#: .\hsr\templates\hsr\import.html:20
+msgid "Open the warp history in game."
+msgstr "Öffne die Warp-Historie im Spiel."
+
+#: .\hsr\templates\hsr\import.html:22
+msgid "Run this command in PowerShell, it copies the URL to your Clipboard"
+msgstr "Führe den Befehl in PowerShell aus. Er kopiert die URL in die Zwischenablage"
+
+#: .\hsr\templates\hsr\import.html:29
+msgid "Copy"
+msgstr "Kopieren"
+
+#: .\hsr\templates\hsr\import.html:32
+msgid "Copy command"
+msgstr "Befehl kopieren"
+
+#: .\hsr\templates\hsr\import.html:34
+msgid "Copied!"
+msgstr "Kopiert!"
+
+#: .\hsr\templates\hsr\import.html:35
+msgid "Press Ctrl+C to copy"
+msgstr "Ctrl+C zum kKpieren"
+
+#: .\hsr\templates\hsr\import.html:52
+msgid "Paste it below and start the import."
+msgstr "Unten einfügen und den Import starten."
+
+#: .\hsr\templates\hsr\import.html:63
+msgid "Warp history URL"
+msgstr "Warp Historie URL"
+
+#: .\hsr\templates\hsr\import.html:75
+msgid ""
+"The URL contains your authkey. It is only used for this import and is not "
+"stored."
+msgstr ""
+"Die URL beinhaltet den Authkey. Er wird nur für diesen import genutzt und "
+"nicht gespeichert."
+
+#: .\hsr\templates\hsr\import.html:79 .\hsr\templates\hsr\import.html:113
+#: .\hsr\templates\hsr\partials\banner_edit_view.html:35
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: .\hsr\templates\hsr\import.html:80 .\hsr\templates\hsr\import.html:114
+msgid "Start import"
+msgstr "Import starten"
+
+#: .\hsr\templates\hsr\import.html:89
+msgid "File"
+msgstr "Datei"
+
+#: .\hsr\templates\hsr\import.html:99
+#, python-format
+msgid ""
+"Database file (db.sqlite3) of the old <a href=\"%(url)s\" class=\"link\" "
+"target=\"_blank\" rel=\"noopener noreferrer\">HSR-Warptracker</a>"
+msgstr ""
+"Datenbank Datei (db.sqlite3) des alten <a href=\"%(url)s\" class=\"link\" "
+"target=\"_blank\" rel=\"noopener noreferrer\">HSR-Warptracker</a>"
+
+#: .\hsr\templates\hsr\index.html:47
+msgid "avg. pulls"
+msgstr "Ø Pulls"
+
+#: .\hsr\templates\hsr\index.html:58
+msgid "50/50 won"
+msgstr "50/50 gewonnen"
+
+#: .\hsr\templates\hsr\index.html:69
+msgid "Jade"
+msgstr "Jade"
+
+#: .\hsr\templates\hsr\item_detail.html:37
+msgid "Pulled"
+msgstr ""
+
+#: .\hsr\templates\hsr\item_detail.html:45
+#: .\hsr\templates\hsr\item_detail.html:72
+msgid "Superimposition"
+msgstr "Bündelungsstufe"
+
+#: .\hsr\templates\hsr\item_detail.html:51
+msgid "Used pulls"
+msgstr "Benötigte Pulls"
+
+#: .\hsr\templates\hsr\item_detail.html:54
+msgid "avg."
+msgstr "Ø"
+
+#: .\hsr\templates\hsr\item_detail.html:60
+msgid "Item not yet obtained"
+msgstr "Item noch nicht erhalten"
+
+#: .\hsr\templates\hsr\item_overview.html:17
+msgid "Add Item"
+msgstr "Item hinzufügen"
+
+#: .\hsr\templates\hsr\item_overview.html:23
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+#: .\hsr\templates\hsr\item_overview.html:105
+msgid "No items found for given filter"
+msgstr "Keine Items für den aktuellen Filter gefunden"
+
+#: .\hsr\templates\hsr\partials\badge_pulls.html:5
+msgid "pulls"
+msgstr "Pulls"
+
+#: .\hsr\templates\hsr\partials\banner_edit_view.html:3
+msgid "Edit banner"
+msgstr "Banner bearbeiten"
+
+#: .\hsr\templates\hsr\partials\banner_edit_view.html:23
+#: .\hsr\templates\hsr\partials\banner_edit_view.html:24
+msgid "Add item"
+msgstr "Item hinzufügen"
+
+#: .\hsr\templates\hsr\partials\banner_edit_view.html:29
+msgid "Missing an item? Add it first."
+msgstr "Fehlt ein Item? Füge es hinzu."
+
+#: .\hsr\templates\hsr\partials\banner_edit_view.html:36
+msgid "Save"
+msgstr "Speichern"
+
+#: .\hsr\templates\hsr\partials\item_add_candidate.html:15
+#: .\hsr\templates\hsr\partials\item_menu.html:40
+msgid "No items found"
+msgstr "Keine Items gefunden"
+
+#: .\hsr\views.py:49
+#, python-format
+msgid "Imported pulls: %(created)d, New items: %(items)d"
+msgstr "Importierte Pulls: %(created)d, Neue Items: %(items)d"
+
+#: .\hsr\views.py:53
+#, python-format
+msgid "Unknown items: %(count)d"
+msgstr "Unbekannte Items: %(count)d"
+
+#: .\hsr\views.py:60
+#, python-format
+msgid "Successfully assigned %(items)d item"
+msgid_plural "Successfully assigned %(items)d items"
+msgstr[0] "Erfolgreich %(items)d Item zugewiesen"
+msgstr[1] "Erfolgreich %(items)d Items zugewiesen"
+
+#: .\hsr\views.py:70
+#, python-format
+msgid "Failed to assign %(items)d item"
+msgid_plural "Failed to assign %(items)d items"
+msgstr[0] "%(items)d Item konnte nicht zugewiesen werden"
+msgstr[1] "%(items)d Items konnten nicht zugewiesen werden"
+
+#: .\hsr\views.py:89
+#, python-format
+msgid "Failed to download %(count)d image. See logs for details."
+msgid_plural "Failed to download %(count)d images. See logs for details."
+msgstr[0] ""
+"%(count)d Bild konnte nicht heruntergeladen werden. In den Logs stehen "
+"Details."
+msgstr[1] ""
+"%(count)d Bilder konnten nicht heruntergeladen werden. In den Logs stehen "
+"Details."
+
+#: .\hsr\views.py:161 .\hsr\views.py:177 .\hsr\views.py:178
+msgid "Visited too frequently"
+msgstr "Zu viele Anfragen, bitte später erneut versuchen"
+
+#: .\hsr\views.py:164 .\hsr\views.py:180
+msgid "Authkey is too old"
+msgstr "Authkey ist abgelaufen"
+
+#: .\hsr\views.py:166 .\hsr\views.py:183
+msgid "Invalid authkey"
+msgstr "Authkey ist ungültig"
+
+#: .\hsr\views.py:186
+msgid "Failed to connect to the API"
+msgstr "Fehler beim Verbinden mit der API"
+
+#: .\hsr\views.py:189
+msgid "Unable to fetch UID"
+msgstr "Fehler beim Holen der UID"
+
+#: .\hsr\views.py:195
+#, python-format
+msgid "Created pets: %(new_items)d"
+msgstr "Erstellte Haustiere: %(new_items)d"
+
+#: .\hsr\views.py:199
+#, python-format
+msgid "Imported pet pulls: %(created)d"
+msgstr "Importierte Haustier-Pulls: %(created)d"
+
+#: .\hsr\views.py:227
+msgid "File could not be read"
+msgstr "Datei konnte nicht gelesen werden"
+
+#: .\hsr\views.py:448
+msgid "Item already exists"
+msgstr "Item existiert bereits"
+
+#: .\hsr\views.py:453
+msgid "Item does not exist"
+msgstr "Item existiert nicht"
+
+#: .\templates\base.html:20
+msgid "Jump to content"
+msgstr ""
+
+#: .\templates\base.html:25
+msgid "Games"
+msgstr "Games"
+
+#: .\templates\base.html:37
+msgid "Logout"
+msgstr "Ausloggen"
+
+#: .\templates\base.html:56
+msgid "Loading"
+msgstr "Lädt..."
+
+#: .\templates\base.html:60
+msgid "Close"
+msgstr "Schließen"
+
+#: .\templates\registration\login.html:3 .\templates\registration\login.html:9
+msgid "Login"
+msgstr "Einloggen"
+
+#: .\templates\registration\login.html:15
+#: .\templates\registration\setup.html:17
+msgid "Username"
+msgstr "Nutzername"
+
+#: .\templates\registration\login.html:28
+#: .\templates\registration\setup.html:30
+msgid "Password"
+msgstr "Passwort"
+
+#: .\templates\registration\login.html:42
+msgid "Log in"
+msgstr "Einloggen"
+
+#: .\templates\registration\setup.html:3
+msgid "Setup"
+msgstr "Setup"
+
+#: .\templates\registration\setup.html:9
+msgid "Create admin account"
+msgstr "Admin-Account erstellen"
+
+#: .\templates\registration\setup.html:11
+msgid ""
+"No account exists yet. The account you create here is used to log in to "
+"Gacha Tracker."
+msgstr ""
+"Kein Account gefunden. Der Account, den du hier erstellst wird genutzt, um "
+"dich beim Gacha Tracker anzumelden."
+
+#: .\templates\registration\setup.html:40
+msgid "Confirm password"
+msgstr "Passwort bestätigen"
+
+#: .\templates\registration\setup.html:54
+msgid "Create account"
+msgstr "Account erstellen"
+
+#~ msgid "First: "
+#~ msgstr "Zuerst:"
+
+#~ msgid "Search items..."
+#~ msgstr "Items suchen..."
+
+#~ msgid "Gacha type"
+#~ msgstr "Gacha-Type"

@@ -14,15 +14,21 @@ class UploadTo:
 
     Args:
         field(str): name of the model field used as filename (e.g. 'name')
+        subfolder(str): subfolder (e.g. 'portrait' or 'icon')
     """
 
-    def __init__(self, field: str):
+    def __init__(self, field: str, subfolder: str = ""):
         self.field = field
+        self.subfolder = subfolder
 
     def __call__(self, instance, filename):
+        path = [instance._meta.app_label, instance._meta.model_name]
+        if self.subfolder:
+            path.append(self.subfolder)
         stem = slugify(str(getattr(instance, self.field)))
         suffix = Path(filename).suffix.lower()
-        return f"{instance._meta.app_label}/{instance._meta.model_name}/{stem}{suffix}"
+        path.append(f"{stem}{suffix}")
+        return "/".join(path)
 
 
 class AbstractItem(models.Model):
@@ -34,7 +40,8 @@ class AbstractItem(models.Model):
         name(str): item name
         eng_name(str): english item name
         rarity(int): rarity
-        image(str): path to item image
+        portrait(str|None): reference to portrait image
+        icon(str|None): reference to icon image
         guide(str): url to prydwen (or other guide) link
     """
 
@@ -49,14 +56,14 @@ class AbstractItem(models.Model):
     portrait = models.ImageField(
         null=True,
         blank=True,
-        upload_to=UploadTo("item_id"),
+        upload_to=UploadTo("item_id", "portrait"),
         verbose_name=_("Item Portrait"),
         help_text=_("Image to be displayed"),
     )
     icon = models.ImageField(
         null=True,
         blank=True,
-        upload_to=UploadTo("item_id"),
+        upload_to=UploadTo("item_id", "icon"),
         verbose_name=_("Item Icon"),
         help_text=_("Small icon to be displayed"),
     )
@@ -89,13 +96,37 @@ class AbstractPull(models.Model):
         verbose_name=_("Gacha Type"),
         help_text=_("Identifier of the gacha pool, defined by the game"),
     )
-    time = models.DateTimeField(verbose_name=_("Time"), help_text=_("Timestamp pull was made"))
+    time = models.DateTimeField(
+        verbose_name=_("Time"), help_text=_("Timestamp pull was made"), null=True, blank=True
+    )
+
+    item = models.ForeignKey(
+        "Item",
+        help_text=_("Item obtained in pull"),
+        verbose_name=_("Item"),
+        related_name="%(class)ss",
+        on_delete=models.PROTECT,
+    )
 
     class Meta:
         abstract = True
 
     def __str__(self):
         return f"{self.id} - {self.time}"
+
+    @property
+    def is_highest_rank(self):
+        """
+        Returns true if the pull contains the highest available rarity
+        """
+        raise NotImplementedError
+
+    @property
+    def is_lost(self):
+        """
+        Returns true if contains a standard item
+        """
+        raise NotImplementedError
 
 
 class AbstractAttribute(models.Model):

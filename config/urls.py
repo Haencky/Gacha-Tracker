@@ -16,11 +16,27 @@ Including another URLconf
 """
 
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.contrib.auth.views import LogoutView
+from django.urls import include, path, re_path
+from django.views.static import serve
+
+from core.views import LoginView, setup
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path("hsr/", include("hsr.urls", namespace="hsr")),
+    path("accounts/login/", LoginView.as_view(), name="login"),
+    path("accounts/logout/", LogoutView.as_view(), name="logout"),
+    path("accounts/setup/", setup, name="setup"),
+]
+
+if settings.SERVE_MEDIA:
+    urlpatterns += [
+        re_path(
+            rf"^{settings.MEDIA_URL.lstrip('/')}(?P<path>.*)$",
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        )
+    ]

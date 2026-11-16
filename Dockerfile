@@ -1,4 +1,4 @@
-FROM node:24-slim AS css
+FROM --platform=$BUILDPLATFORM node:24-slim AS css
 WORKDIR /app
 COPY package.json .
 COPY package-lock.json .

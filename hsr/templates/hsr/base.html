@@ -39,7 +39,7 @@
                         </svg>
                         <input type="search"
                                required
-                               placeholder="Search"
+                               placeholder='{% translate "Search items..." %}'
                                name="q"
                                hx-get="{% url 'hsr:item-search' %}"
                                hx-trigger="input changed delay:300ms, search"

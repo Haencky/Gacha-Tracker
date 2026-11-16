@@ -6,7 +6,7 @@
             {{ count }}
         {% endif %}
         <img src="{% static 'hsr/AvatarIcon.png' %}"
-             alt="CHARACTER"
+             alt="{{ item_type.label }}"
              loading="lazy"
              class="size-5" />
         {% translate "Character" %}
@@ -15,7 +15,7 @@
             {{ count }}
         {% endif %}
         <img src="{% static 'hsr/Icon_Light_Cone.webp' %}"
-             alt="LIGHT CONE"
+             alt="{{ item_type.label }}"
              loading="lazy"
              class="size-5" />
         {% translate "Light Cone" %}

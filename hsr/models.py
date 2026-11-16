@@ -144,7 +144,7 @@ class Banner(models.Model):
     gacha_type = models.CharField(
         max_length=30,
         verbose_name=_("Gacha Type"),
-        help_text=_("Gacha type"),
+        help_text=_("Banner type the banner belongs to"),
         choices=GachaTypes,
     )
 

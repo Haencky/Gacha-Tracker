@@ -73,14 +73,14 @@ def _finish_import(request, result: ImportResult):
             )
             % {"items": assignment.fail},
         )
-    donwload = download_missing_images(
+    download = download_missing_images(
         catalog=cache.get_or_set("hsr_item_catalog", ItemCatalog.load, 3600)
     )
     failed = 0
-    failed += donwload.dtype.fail
-    failed += donwload.path.fail
-    failed += donwload.item_portraits.fail
-    failed += donwload.item_icons.fail
+    failed += download.dtype.fail
+    failed += download.path.fail
+    failed += download.item_portraits.fail
+    failed += download.item_icons.fail
 
     if failed > 0:
         messages.warning(

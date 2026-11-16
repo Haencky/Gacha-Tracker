@@ -10,6 +10,7 @@ COPY . .
 RUN npm run css:build
 
 FROM python:3.14-slim-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends gettext && rm -rf /var/lib/apt/lists/*
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV UV_LINK_MODE=copy
@@ -27,6 +28,7 @@ RUN uv sync --frozen --no-dev
 COPY . .
 COPY --from=css /app/static/css/app.css static/css/app.css
 RUN SECRET_KEY=build-only python manage.py collectstatic --noinput
+RUN SECRET_KEY=build-only python manage.py compilemessages --ignore=.venv
 
 ENV MEDIA_ROOT=/data/media
 ENV DATABASE_URL=sqlite:////data/db.sqlite3

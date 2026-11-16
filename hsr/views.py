@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 
 from django.contrib import messages
 from django.core.cache import cache
-from django.db.models import Count, F, Max, Min, Q, Sum
+from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from django.db.models.functions import Least
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -175,7 +175,7 @@ def import_api_view(request):
                 pet_result = pet_writer.write(pet_parser.fetch())
             except RateLimitError:
                 messages.error(request, _("Visited too frequently"))
-                logger.exception("Visited to frequently")
+                logger.warning(request, _("Visited too frequently"))
             except AuthkeyTimeoutError:
                 messages.error(request, _("Authkey is too old"))
                 logger.warning("Provided authkey is too old")
@@ -262,7 +262,8 @@ def detail_item(request, item_id: str):
 
     item = get_object_or_404(
         Item.objects.annotate(pulls=Count("warps"))
-        .annotate(featured_pulls_total=Sum(F("warps__featured_pity")))
+        .annotate(featured_pulls_total=Sum("warps__featured_pity"))
+        .annotate(featured_pull_avg=Avg("warps__featured_pity"))
         .select_related("damage_type", "path"),
         item_id=item_id,
     )

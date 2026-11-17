@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import tomllib
 from pathlib import Path
 
 import environ
@@ -19,6 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
 env.read_env(BASE_DIR / ".env")
+
+with open(BASE_DIR / "pyproject.toml", "rb") as f:
+    APP_VERSION = tomllib.load(f)["project"]["version"]
 
 
 # Quick-start development settings - unsuitable for production
@@ -79,6 +83,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "core.context_processors.games",
+                "core.context_processors.app_info",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",

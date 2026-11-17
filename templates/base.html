@@ -46,10 +46,11 @@
         <div id="messages"
              class="toast toast-top toast-end z-50"
              aria-live="polite">{% include "partials/messages.html" %}</div>
-        <main id="content" class="container mx-auto max-w-5xl p-4">
+        <main id="content" class="container mx-auto max-w-5xl p-4 flex-1">
             {% block content %}
             {% endblock content %}
         </main>
+        {% include "partials/footer.html" %}
         <span id="loading"
               class="htmx-indicator loading loading-spinner loading-md fixed bottom-4 right-4"
               role="status"

@@ -1,0 +1,22 @@
+{% load i18n %}
+<footer class="footer sm:footer-horizontal bg-neutral text-neutral-content p-12">
+    <nav>
+        <h6 class="footer-title">{% translate "Version" %}</h6>
+        <p>Gacha Tracker v{{ version }}</p>
+    </nav>
+    <nav>
+        <h6 class="footer-title">{% translate "Links" %}</h6>
+        <a class="link link-hover"
+           target="_blank"
+           rel="noopener noreferrer"
+           href="https://github.com/Haencky/Gacha-Tracker">GitHub</a>
+        <a class="link link-hover"
+           target="_blank"
+           rel="noopener noreferrer"
+           href="https://hub.docker.com/r/haenck/gacha-tracker">DockerHub</a>
+    </nav>
+    <nav>
+        <h6 class="footer-title">{% translate "Disclaimer" %}</h6>
+        <p>Not affiliated with HoYoverse.</p>
+    </nav>
+</footer>

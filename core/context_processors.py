@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from .games import all_games
 
 
@@ -8,3 +10,7 @@ def games(request):
         if request.resolver_match.namespace
         else None,
     }
+
+
+def app_info(request):
+    return {"version": settings.APP_VERSION}

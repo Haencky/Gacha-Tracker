@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Settings" %} · Gacha Tracker{% endblock title %}
+{% block content %}
+    <div class="mx-auto flex max-w-xl flex-col gap-6">
+        <h1 class="text-3xl font-bold">{% translate "Settings" %}</h1>
+        <form method="post"
+              action="{% url 'core:settings' %}"
+              class="card bg-base-100 shadow-sm">
+            {% csrf_token %}
+            <div class="card-body gap-4">
+                <h2 class="card-title">{{ form.visible_games.label }}</h2>
+                {% for choice in form.visible_games %}
+                    <label class="label cursor-pointer justify-between">
+                        <span>{{ choice.choice_label }}</span>
+                        {{ choice.tag }}
+                    </label>
+                {% endfor %}
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+                </div>
+            </div>
+        </form>
+        {% if user.is_staff %}
+            <div class="card bg-base-100 shadow-sm">
+                <h2 class="card-title">{% translate "Administration" %}</h2>
+                <a href="{% url 'admin:index' %}"
+                   hx-boost="false"
+                   class="btn btn-outline card-body">{% translate "Open admin" %}</a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}

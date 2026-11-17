@@ -1,14 +1,13 @@
 from django.conf import settings
 
-from .games import all_games
+from .games import visible_games
 
 
 def games(request):
+    match = request.resolver_match
     return {
-        "games": all_games(),
-        "current_game": request.resolver_match.namespace
-        if request.resolver_match.namespace
-        else None,
+        "games": visible_games(),
+        "current_game": match.namespace if match else None,
     }
 
 

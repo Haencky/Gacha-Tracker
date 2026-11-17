@@ -157,3 +157,13 @@ class AbstractAttribute(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+
+class GameSettings(models.Model):
+    game_key = models.CharField(max_length=20, unique=True, verbose_name=_("Game Key"))
+    visible = models.BooleanField(
+        default=True, verbose_name=_("Visible"), help_text=_("Defines visibility in nav bar")
+    )
+
+    def __str__(self):
+        return self.game_key

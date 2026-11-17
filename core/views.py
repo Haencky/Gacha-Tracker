@@ -1,8 +1,14 @@
+from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext_lazy as _
+
+from .forms import SettingForm
+from .games import all_games, hidden_game_keys
+from .models import GameSettings
 
 
 # Create your views here.
@@ -52,3 +58,23 @@ def setup(request):
         form = UserCreationForm()
 
     return render(request, "registration/setup.html", {"form": form})
+
+
+def settings_view(request):
+    if request.method == "POST":
+        form = SettingForm(request.POST)
+        if form.is_valid():
+            visible = set(form.cleaned_data["visible_games"])
+            for game in all_games():
+                GameSettings.objects.update_or_create(
+                    game_key=game.game_key, defaults={"visible": game.game_key in visible}
+                )
+            messages.success(request, _("Settings saved"))
+            return redirect("core:settings")
+    else:
+        hidden = hidden_game_keys()
+        form = SettingForm(
+            initial={"visible_games": [g.game_key for g in all_games() if g.game_key not in hidden]}
+        )
+
+    return render(request, "core/settings.html", {"form": form})

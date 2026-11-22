@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from core.models import AbstractAttribute, AbstractItem, AbstractPityPull
 
 from .choices import GachaTypes, ItemTypes
+from .constants import STANDARD_ITEMS
 
 
 # Create your models here.
@@ -67,6 +68,10 @@ class Item(AbstractItem):
             )
         ]
 
+    @property
+    def is_standard(self):
+        return self.item_id in STANDARD_ITEMS
+
 
 class Wish(AbstractPityPull):
     """
@@ -81,3 +86,13 @@ class Wish(AbstractPityPull):
         on_delete=models.PROTECT,
         related_name="wishes",
     )
+
+    class Meta(AbstractPityPull.Meta):
+        verbose_name = _("Wish")
+        verbose_name_plural = _("Wishes")
+        ordering = ["id"]
+        indexes = [models.Index(fields=("gacha_type", "id"))]
+
+    @property
+    def is_highest_rank(self):
+        return self.item.rarity == 5

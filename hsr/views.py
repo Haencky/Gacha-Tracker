@@ -13,9 +13,10 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from django.views import generic
 
+from core.choices import FiftyFifty
 from core.services.stats import Stats, get_stats
 
-from .choices import FiftyFifty, GachaTypes, ItemTypes
+from .choices import GachaTypes, ItemTypes
 from .constants import CELESTIAL_INVITES, FEATURED_TYPES, HARD_PITYS, ITEM_TYPES
 from .exceptions import (
     ApiError,

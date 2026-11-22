@@ -6,9 +6,10 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Q
 
+from core.choices import FiftyFifty
 from core.models import AbstractAttribute
 
-from .choices import FiftyFifty, GachaTypes, ItemTypes
+from .choices import GachaTypes, ItemTypes
 from .constants import CELESTIAL_INVITES, FEATURED_TYPES
 from .models import Banner, DamageType, Item, Path, Warp
 

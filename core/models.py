@@ -5,6 +5,8 @@ from django.utils.deconstruct import deconstructible
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
+from .choices import FiftyFifty
+
 
 # Create your models here.
 @deconstructible
@@ -127,6 +129,39 @@ class AbstractPull(models.Model):
         Returns true if contains a standard item
         """
         raise NotImplementedError
+
+
+class AbstractPityPull(AbstractPull):
+    """
+    Abstract pull using a pity and fifty fifty system
+    """
+
+    pity = models.IntegerField(
+        verbose_name=_("Pity"), help_text=_("pull pity (1-xx)"), null=True, blank=True
+    )
+
+    fifty_fifty = models.CharField(
+        blank=True,
+        choices=FiftyFifty,
+        default=FiftyFifty.NONE,
+        max_length=10,
+        verbose_name=_("Fifty Fifty"),
+        help_text=_("Info about fifty fifty won or loss"),
+    )
+
+    featured_pity = models.IntegerField(
+        verbose_name=_("Featured pity"),
+        help_text=_("Pity required for featured item"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta(AbstractPull.Meta):
+        abstract = True
+
+    @property
+    def is_lost(self):
+        return self.fifty_fifty == FiftyFifty.LOST
 
 
 class AbstractAttribute(models.Model):

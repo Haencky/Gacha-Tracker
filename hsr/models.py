@@ -1,9 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import AbstractAttribute, AbstractItem, AbstractPull
+from core.models import AbstractAttribute, AbstractItem, AbstractPityPull
 
-from .choices import ChromaAppearance, FiftyFifty, GachaTypes, ItemTypes
+from .choices import ChromaAppearance, GachaTypes, ItemTypes
 from .constants import CELESTIAL_INVITES
 
 # Create your models here.
@@ -158,7 +158,7 @@ class Banner(models.Model):
         )
 
 
-class Warp(AbstractPull):
+class Warp(AbstractPityPull):
     """
     Pull for HSR
     Inherits attributes from Abstract Pull
@@ -178,35 +178,11 @@ class Warp(AbstractPull):
         choices=GachaTypes,
     )
 
-    pity = models.IntegerField(
-        verbose_name=_("Pity"), help_text=_("pull pity (1-xx)"), null=True, blank=True
-    )
-
-    fifty_fifty = models.CharField(
-        blank=True,
-        choices=FiftyFifty,
-        default=FiftyFifty.NONE,
-        max_length=10,
-        verbose_name=_("Fifty Fifty"),
-        help_text=_("Info about fifty fifty won or loss"),
-    )
-
-    featured_pity = models.IntegerField(
-        verbose_name=_("Featured pity"),
-        help_text=_("Pity required for featured item"),
-        null=True,
-        blank=True,
-    )
-
-    @property
-    def is_lost(self):
-        return self.fifty_fifty == FiftyFifty.LOST
-
     @property
     def is_highest_rank(self):
         return self.item.rarity == 5
 
-    class Meta(AbstractPull.Meta):
+    class Meta(AbstractPityPull.Meta):
         verbose_name = _("Warp")
         verbose_name_plural = _("Warps")
         ordering = ["id"]

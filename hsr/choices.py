@@ -21,13 +21,6 @@ class GachaTypes(models.TextChoices):
     LIGHT_CONE_COLLABORATION = "22", _("Light Cone Collaboration Warp")
 
 
-class FiftyFifty(models.TextChoices):
-    WON = "Won", _("Won")
-    LOST = "Lost", _("Lost")
-    GUARANTEED = "Guaranteed", _("Guaranteed")
-    NONE = "", _("-")
-
-
 class ChromaAppearance(models.TextChoices):
     NORMAL = "0", _("Normal")
     COLLECTOR = "1", _("Collector")

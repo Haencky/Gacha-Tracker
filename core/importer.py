@@ -9,6 +9,8 @@ class AbstractPullRecord(ABC):
     Attributes:
         time(str): timestamp
         id(str): pull identifier
+        uid(str): account identifier
+        gacha_type(str): gacha type
     """
 
     time: str
@@ -30,6 +32,7 @@ class AbstractParser(ABC):
         Returns:
             records(list[AbstractPullRecord])
         """
+        raise NotImplementedError
 
 
 class AbstractPullWriter(ABC):
@@ -46,6 +49,7 @@ class AbstractPullWriter(ABC):
         Args:
             record(list): pulls to be written to the DB
         """
+        raise NotImplementedError
 
 
 @dataclass
